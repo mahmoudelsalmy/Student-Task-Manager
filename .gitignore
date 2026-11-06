@@ -1,0 +1,28 @@
+## Visual Studio / .NET
+.vs/
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+TestResults/
+*.user
+*.suo
+*.cache
+*.log
+
+## Secrets and local configuration
+secrets.json
+appsettings.Development.local.json
+.env
+.env.*
+!.env.example
+
+## IDEs
+.idea/
+.vscode/
+*.sln.docstates
+
+## OS
+.DS_Store
+Thumbs.db
