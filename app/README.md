@@ -7,7 +7,8 @@ It uses an ASP.NET Core 10 Web API, EF Core 10, SQLite, JWT bearer authenticatio
 ## Features
 
 - Email and password registration and login. Passwords are salted PBKDF2-HMAC-SHA256 hashes.
-- JWT-protected, user-scoped task endpoints.
+- JWT-protected, user-scoped task and course endpoints.
+- Course management with course name, code, instructor, semester, and display color.
 - Create, view, edit, complete, and delete tasks with due dates, priority, status, category, and notes.
 - Dashboard totals for all tasks, completed tasks, deadlines due within seven days, overdue tasks, and completion percentage.
 - Server-side title search, status/category/priority filters, upcoming date filters, and pagination.
@@ -92,6 +93,11 @@ All JSON properties use camel case. Task statuses are `ToDo`, `InProgress`, and 
 | `POST` | `/api/auth/login` | No | Sign in and return a bearer token |
 | `GET` | `/api/auth/me` | Yes | Return the signed-in profile |
 | `GET` | `/api/dashboard?today=2026-10-22` | Yes | Summary counts using the supplied local date |
+| `GET` | `/api/courses` | Yes | List the signed-in user's courses |
+| `POST` | `/api/courses` | Yes | Create a course |
+| `GET` | `/api/courses/{id}` | Yes | Read one owned course |
+| `PUT` | `/api/courses/{id}` | Yes | Update an owned course |
+| `DELETE` | `/api/courses/{id}` | Yes | Delete an owned course |
 | `GET` | `/api/tasks` | Yes | List tasks with filters and pagination |
 | `GET` | `/api/tasks/{id}` | Yes | Read one owned task |
 | `POST` | `/api/tasks` | Yes | Create a task |
