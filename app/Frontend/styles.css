@@ -289,10 +289,6 @@ select { appearance: auto; }
 .kanban-board { display: grid; grid-template-columns: repeat(3, minmax(250px, 1fr)); gap: 14px; padding: 4px 20px 20px; overflow-x: auto; align-items: start; }
 .kanban-column { min-height: 180px; border-radius: var(--radius-lg); padding: 12px; background: var(--surface-2); }
 .kanban-column-heading, .planner-day-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-.planner-day-heading { flex-wrap: wrap; }
-.planner-day-heading h3 { margin-right: auto; }
-.planner-add { flex-shrink: 0; }
-.planned-block { border-left: 3px solid var(--primary); }
 .kanban-column-heading h3, .planner-day-heading h3 { font-size: var(--fs-sm); font-weight: 700; }
 .kanban-column-heading span, .planner-day-heading span { color: var(--text-3); font-size: var(--fs-xs); }
 .planning-task { margin: 8px 0; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; background: var(--surface); box-shadow: var(--shadow-sm); }

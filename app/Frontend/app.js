@@ -507,9 +507,8 @@ async function deleteExam(exam){if(!await confirmAction({title:"Delete exam?",me
     $("#status-filter").value = "";
     activateView(view);
     if (["calendar", "kanban", "planner"].includes(view)) {
-      $("#planning-prev").classList.toggle("hidden", !["calendar","planner"].includes(view));
-      $("#planning-next").classList.toggle("hidden", !["calendar","planner"].includes(view));
-      $("#plan-block-add").classList.toggle("hidden", view !== "planner");
+      $("#planning-prev").classList.toggle("hidden", view !== "calendar");
+      $("#planning-next").classList.toggle("hidden", view !== "calendar");
       renderPlanningView();
       return;
     }

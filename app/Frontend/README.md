@@ -4,10 +4,11 @@ Plain HTML/CSS/JavaScript served by the ASP.NET Core app (no build step, no fram
 
 | File | Purpose |
 |---|---|
-| `tokens.css` | Design tokens: type scale, spacing, radii, shadows and **light + dark colour themes**, plus a system font stack that uses Inter when available. |
+| `tokens.css` | Design tokens: type scale, spacing, radii, shadows and **light + dark colour themes**. The only place colours are defined. |
 | `styles.css` | Components and layout. Uses tokens only – never hardcode a colour here. |
 | `theme-init.js` | Applies the saved/OS theme before first paint (external file because the CSP forbids inline scripts). |
 | `app.js` | Application logic. Views are declared once in the `VIEWS`/`PANELS` registry; `activateView()` is the only code that shows/hides panels. |
+| `fonts/` | Self-hosted Inter (SIL OFL 1.1, licence included). |
 
 ## Rules
 - Add a colour by adding a token to **both** themes in `tokens.css`, then check contrast (text pairs must be ≥ 4.5:1).
