@@ -42,12 +42,9 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         {
             return Unauthorized(new ProblemDetails
             {
-                Title = result.FailureReason switch
-                {
-                    LoginFailureReason.AccountNotFound => "No account was found with this email. Please create an account first.",
-                    LoginFailureReason.IncorrectPassword => "The password is incorrect. Please try again.",
-                    _ => "We couldn't sign you in. Please try again."
-                },
+                // Keep the response identical for unknown emails and wrong
+                // passwords to avoid exposing which email addresses are registered.
+                Title = "Email or password is incorrect. Please try again.",
                 Status = StatusCodes.Status401Unauthorized
             });
         }

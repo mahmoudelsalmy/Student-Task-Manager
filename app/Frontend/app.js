@@ -408,7 +408,9 @@
   function setView(view) {
     state.view = view;
     state.page = 1;
-    if (view !== "completed") $("#status-filter").value = "";
+    // Navigation views own the status filter; do not let a previous manual
+    // filter (for example InProgress) override the Completed view.
+    $("#status-filter").value = "";
     $$(".nav-link").forEach(button => button.classList.toggle("active", button.dataset.view === view));
     const heading = view === "upcoming" ? "Upcoming" : view === "completed" ? "Completed" : "All tasks";
     $("#breadcrumb-current").textContent = heading;
