@@ -358,6 +358,65 @@ public sealed class ApiIntegrationTests : IClassFixture<TaskMateApiFactory>
         Assert.Equal(HttpStatusCode.Unauthorized, (await _client.GetAsync("/api/study/summary")).StatusCode);
     }
 
+    [Fact]
+    public async Task Exams_AreCrudOwnerScopedAndValidateCourseAndUtc()
+    {
+        using var owner = _factory.CreateClient();
+        owner.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer", await RegisterAndGetToken(owner, $"exam-owner-{Guid.NewGuid():N}@example.com"));
+        var courseResponse = await owner.PostAsJsonAsync("/api/courses", new { name = "Chemistry" });
+        using var courseJson = JsonDocument.Parse(await courseResponse.Content.ReadAsStringAsync());
+        var courseId = courseJson.RootElement.GetProperty("id").GetGuid();
+        var scheduled = DateTimeOffset.UtcNow.AddDays(9);
+        var create = await owner.PostAsJsonAsync("/api/exams", new
+        {
+            title = "Organic chemistry midterm",
+            description = "Chapters 1 through 5",
+            scheduledAtUtc = scheduled,
+            durationMinutes = 120,
+            courseId,
+            location = "Science Hall 204"
+        });
+        Assert.Equal(HttpStatusCode.Created, create.StatusCode);
+        using var created = JsonDocument.Parse(await create.Content.ReadAsStringAsync());
+        var examId = created.RootElement.GetProperty("id").GetGuid();
+        Assert.Equal(courseId, created.RootElement.GetProperty("courseId").GetGuid());
+        Assert.Equal("Science Hall 204", created.RootElement.GetProperty("location").GetString());
+
+        var list = await owner.GetAsync("/api/exams");
+        using var listed = JsonDocument.Parse(await list.Content.ReadAsStringAsync());
+        Assert.Single(listed.RootElement.EnumerateArray());
+        var update = await owner.PutAsJsonAsync($"/api/exams/{examId}", new
+        {
+            title = "Organic chemistry final",
+            description = (string?)null,
+            scheduledAtUtc = scheduled.AddDays(2),
+            durationMinutes = 180,
+            courseId = (Guid?)null,
+            location = "Hall 2"
+        });
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        var wrongOffset = await owner.PostAsJsonAsync("/api/exams", new
+        {
+            title = "Invalid offset exam",
+            scheduledAtUtc = scheduled.ToOffset(TimeSpan.FromHours(2)),
+            durationMinutes = 90
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, wrongOffset.StatusCode);
+
+        using var other = _factory.CreateClient();
+        other.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer", await RegisterAndGetToken(other, $"exam-other-{Guid.NewGuid():N}@example.com"));
+        Assert.Equal(HttpStatusCode.NotFound, (await other.GetAsync($"/api/exams/{examId}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await other.DeleteAsync($"/api/exams/{examId}")).StatusCode);
+        var foreignCourse = await other.PostAsJsonAsync("/api/exams", new
+        {
+            title = "Foreign course exam", scheduledAtUtc = scheduled, courseId
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, foreignCourse.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/api/exams/{examId}")).StatusCode);
+    }
+
 }
 
 public sealed class TaskMateApiFactory : WebApplicationFactory<Program>

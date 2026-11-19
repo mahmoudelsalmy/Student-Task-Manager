@@ -77,3 +77,13 @@ The Study API currently accepts client-provided start/end timestamps, limits ses
 
 Each phase should be implemented in a focused commit, with tests for validation and ownership before moving to the next phase. PR #3 remains open for review; do not merge it without explicit approval.
 
+## Follow-up implementation record
+
+After the audited a8f61a8 baseline:
+
+- Added a study-session service with explicit UTC timestamp checks, elapsed/focus duration bounds, course/task ownership validation, owner-scoped history and summaries, and integration coverage. Added a responsive Pomodoro UI that records finished focus intervals and can associate a course/task.
+- Added a separate exam model and additive migration. Exams have owner-scoped CRUD, optional owner-validated courses, UTC schedule timestamps, duration/location/notes, a responsive list/edit UI, and monthly-calendar entries. Assignments remain tasks.
+- GitHub Actions passed restore, build, and tests on the study-session commit 025166e. The exam follow-up is still awaiting hosted CI. Local .NET compilation remains blocked by the environment cancelling the compiler process; frontend JavaScript syntax and whitespace checks pass locally.
+
+The items above are follow-up implementation evidence and do not change the historical feature matrix or audited-head findings above.
+

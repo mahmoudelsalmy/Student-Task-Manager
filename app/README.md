@@ -12,6 +12,7 @@ It uses an ASP.NET Core 10 Web API, EF Core 10, SQLite, JWT bearer authenticatio
 - Create, view, edit, complete, and delete tasks with due dates, priority, status, category, notes, and an optional course link.
 - Monthly deadline calendar, status-based Kanban board, and a seven-day study planner with suggested time based on upcoming exams and assignments.
 - Authenticated study-session creation, recent-session history, and total/weekly/monthly time summaries, with a Pomodoro focus timer in the browser UI. Goals and browser-level tests are not implemented yet.
+- User-owned exam scheduling with course, local-time entry, duration, location and notes; assignments continue to use task categories.
 - Dashboard totals for all tasks, completed tasks, deadlines due within seven days, overdue tasks, and completion percentage.
 - Server-side title search, status/category/priority filters, upcoming date filters, and pagination.
 - Responsive dashboard with mobile navigation and `/` as a keyboard shortcut to search.
@@ -98,6 +99,11 @@ All JSON properties use camel case. Task statuses are `ToDo`, `InProgress`, and 
 | `GET` | `/api/study/sessions?limit=50` | Yes | List up to 100 most recent owned study sessions |
 | `POST` | `/api/study/sessions` | Yes | Record a completed study session with UTC start/end timestamps, actual focused seconds, and optional owned course/task IDs |
 | `GET` | `/api/study/summary` | Yes | Return all-time, week and month study-minute totals |
+| `GET` | `/api/exams` | Yes | List the signed-in user's exams ordered by date |
+| `POST` | `/api/exams` | Yes | Schedule an exam and optionally link an owned course; timestamps use UTC |
+| `GET` | `/api/exams/{id}` | Yes | Read an owned exam |
+| `PUT` | `/api/exams/{id}` | Yes | Update an owned exam |
+| `DELETE` | `/api/exams/{id}` | Yes | Delete an owned exam |
 | `GET` | `/api/courses` | Yes | List the signed-in user's courses |
 | `POST` | `/api/courses` | Yes | Create a course |
 | `GET` | `/api/courses/{id}` | Yes | Read one owned course |
