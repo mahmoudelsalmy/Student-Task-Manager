@@ -14,8 +14,9 @@ TaskMate is a student productivity web application for managing academic tasks, 
 - Monthly calendar for task deadlines and scheduled exams, status board and seven-day due-date study planner.
 - Exam scheduling with course, date/time, duration, location and notes.
 - Persisted study sessions and an in-app Pomodoro timer with course/task links, session history, weekly/monthly summaries, and course-scoped weekly study goals.
+- A weekly planner that saves study blocks and optionally links them to tasks and courses.
 
-**Known gaps:** The planner still suggests work from task deadlines without saving study blocks. Notifications, advanced task features and analytics remain on the roadmap. See [the audit and roadmap](docs/AUDIT_AND_ROADMAP.md).
+**Known gaps:** Notifications/reminders, advanced task workflows (subtasks, recurrence and attachments), dashboard analytics, profile/settings, and browser-level regression tests remain on the roadmap. See [the audit and roadmap](docs/AUDIT_AND_ROADMAP.md).
 
 ## Technology
 
@@ -48,7 +49,7 @@ From `app/`:
 dotnet test TaskMate.slnx --configuration Release
 ```
 
-GitHub Actions restores, builds and runs the xUnit suite for changes under `app/`. Current automated coverage includes authentication, task/course ownership, task-course relationships, password hashing and validation. Study-session API coverage is being added; browser-level tests are not configured.
+GitHub Actions restores, builds and runs the xUnit suite for changes under `app/`. Automated coverage includes authentication, task/course ownership, task-course relationships, password hashing and validation, exams, study sessions and goals, and saved study-plan blocks. Browser-level regression tests are not configured in this repository.
 
 ## Repository map
 
@@ -65,4 +66,3 @@ SQLite is suitable for local use or a single application instance. Docker Compos
 ## License
 
 No license has been selected for this repository yet.
-
