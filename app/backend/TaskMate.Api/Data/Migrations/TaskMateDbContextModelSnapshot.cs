@@ -61,6 +61,24 @@ namespace TaskMate.Api.Data.Migrations
                     b.ToTable("Courses");
                 });
 
+            modelBuilder.Entity("TaskMate.Api.Domain.StudySession", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("TEXT");
+                    b.Property<Guid?>("CourseId").HasColumnType("TEXT");
+                    b.Property<DateTime>("CreatedAtUtc").HasColumnType("TEXT");
+                    b.Property<int>("DurationMinutes").HasColumnType("INTEGER");
+                    b.Property<DateTime>("EndedAtUtc").HasColumnType("TEXT");
+                    b.Property<string>("Notes").HasMaxLength(1000).HasColumnType("TEXT");
+                    b.Property<DateTime>("StartedAtUtc").HasColumnType("TEXT");
+                    b.Property<Guid?>("TaskId").HasColumnType("TEXT");
+                    b.Property<Guid>("UserId").HasColumnType("TEXT");
+                    b.HasKey("Id");
+                    b.HasIndex("CourseId");
+                    b.HasIndex("TaskId");
+                    b.HasIndex("UserId", "StartedAtUtc");
+                    b.ToTable("StudySessions");
+                });
+
             modelBuilder.Entity("TaskMate.Api.Domain.TaskItem", b =>
                 {
                     b.Property<Guid>("Id")
@@ -178,6 +196,13 @@ namespace TaskMate.Api.Data.Migrations
 
                     b.Navigation("User");
                     b.Navigation("Course");
+                });
+
+            modelBuilder.Entity("TaskMate.Api.Domain.StudySession", b =>
+                {
+                    b.HasOne("TaskMate.Api.Domain.Course", null).WithMany().HasForeignKey("CourseId").OnDelete(DeleteBehavior.SetNull);
+                    b.HasOne("TaskMate.Api.Domain.TaskItem", null).WithMany().HasForeignKey("TaskId").OnDelete(DeleteBehavior.SetNull);
+                    b.HasOne("TaskMate.Api.Domain.User", null).WithMany().HasForeignKey("UserId").OnDelete(DeleteBehavior.Cascade).IsRequired();
                 });
 
             modelBuilder.Entity("TaskMate.Api.Domain.User", b =>
