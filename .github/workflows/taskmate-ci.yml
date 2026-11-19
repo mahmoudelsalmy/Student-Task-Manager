@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -28,7 +28,10 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Restore
-        run: dotnet restore app/backend/TaskMate.Api/TaskMate.Api.csproj
+        run: dotnet restore app/TaskMate.slnx
 
       - name: Build
-        run: dotnet build app/backend/TaskMate.Api/TaskMate.Api.csproj --configuration Release --no-restore
+        run: dotnet build app/TaskMate.slnx --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test app/TaskMate.slnx --configuration Release --no-build --logger "console;verbosity=normal"
