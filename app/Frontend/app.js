@@ -150,6 +150,8 @@
     $("#profile-email").textContent = payload.user.email;
     $("#avatar").textContent = [...payload.user.name.trim()][0]?.toUpperCase() || "S";
     setWelcome();
+    activateView("all");
+    $("#tasks-heading").firstChild.textContent = "My tasks ";
     await refreshDashboard();
     await Promise.all([loadTasks(), loadCourses()]);
   }
@@ -405,7 +407,7 @@
   }
 
   async function deleteTask(task) {
-    if (!window.confirm(`Delete “${task.title}”? This can’t be undone.`)) return;
+    if (!await confirmAction({ title: "Delete task?", message: `“${task.title}” will be permanently deleted.` })) return;
     try {
       await api(`/api/tasks/${task.id}`, { method: "DELETE" });
       await Promise.all([refreshCurrentView(), refreshDashboard()]);
@@ -416,13 +418,13 @@
   }
 
 
-function courseCard(c){const el=document.createElement("article");el.className="course-card";el.style.setProperty("--course-color",c.color||"#64748b");const name=document.createElement("h3");name.textContent=c.name;const meta=document.createElement("p");meta.textContent=[c.code,c.instructor,c.semester].filter(Boolean).join(" · ");const edit=document.createElement("button");edit.type="button";edit.className="button button-outline button-small";edit.textContent="Edit";edit.addEventListener("click",()=>courseDialog(c));const del=document.createElement("button");del.type="button";del.className="button button-quiet button-small";del.textContent="Delete";del.addEventListener("click",()=>deleteCourse(c));el.append(name,meta,edit,del);return el;}
+function courseCard(c){const el=document.createElement("article");el.className="course-card";el.style.setProperty("--course-color",c.color||"#64748b");const name=document.createElement("h3");name.textContent=c.name;const meta=document.createElement("p");meta.textContent=[c.code,c.instructor,c.semester].filter(Boolean).join(" · ");const edit=document.createElement("button");edit.type="button";edit.className="button button-outline button-small";edit.textContent="Edit";edit.addEventListener("click",()=>courseDialog(c));const del=document.createElement("button");del.type="button";del.className="button button-quiet button-small";del.textContent="Delete";del.addEventListener("click",()=>deleteCourse(c));const actions=document.createElement("div");actions.className="course-actions";actions.append(edit,del);el.append(name,meta,actions);return el;}
 function updateCourseOptions(){const select=$("#task-course");const selected=select.value;select.replaceChildren(new Option("No course", ""),...state.courses.map(c=>new Option(c.code?`${c.name} (${c.code})`:c.name,c.id)));select.value=state.courses.some(c=>c.id===selected)?selected:"";}
 async function loadCourses(){try{state.courses=await api("/api/courses");updateCourseOptions();$("#course-count").textContent=state.courses.length;$("#nav-courses").textContent=state.courses.length;$("#course-list").replaceChildren(...state.courses.map(courseCard));$("#course-empty").classList.toggle("hidden",state.courses.length>0);}catch(e){showToast(e.message,true);}}
 function courseDialog(c=null){$("#course-form").reset();$("#course-id").value=c?.id||"";$("#course-dialog-title").textContent=c?"Edit course":"Add a course";$("#course-name").value=c?.name||"";$("#course-code").value=c?.code||"";$("#course-instructor").value=c?.instructor||"";$("#course-semester").value=c?.semester||"";$("#course-color").value=c?.color||"#64748b";setMessage($("#course-form-message"));$("#course-dialog").showModal();}
 async function saveCourse(e){e.preventDefault();const id=$("#course-id").value;const body={name:$("#course-name").value.trim(),code:$("#course-code").value.trim()||null,instructor:$("#course-instructor").value.trim()||null,semester:$("#course-semester").value.trim()||null,color:$("#course-color").value};try{await api(id?`/api/courses/${id}`:"/api/courses",{method:id?"PUT":"POST",body:JSON.stringify(body)});$("#course-dialog").close();await loadCourses();showToast("Course saved.");}catch(err){setMessage($("#course-form-message"),err.message);}}
-async function deleteCourse(c){if(!confirm(`Delete “${c.name}”?`))return;try{await api(`/api/courses/${c.id}`,{method:"DELETE"});await Promise.all([loadCourses(),refreshCurrentView()]);showToast("Course deleted. Linked tasks are now uncategorized.");}catch(e){showToast(e.message,true);}}
-function showCourses(){state.view="courses";$(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.view==="courses"));$("#breadcrumb-current").textContent="My courses";$(".stats-grid").classList.add("hidden");$(".welcome-row").classList.add("hidden");$(".tasks-panel").classList.add("hidden");$("#planning-panel").classList.add("hidden");$("#study-panel").classList.add("hidden");$("#exams-panel").classList.add("hidden");$("#courses-panel").classList.remove("hidden");loadCourses();closeSidebar();}
+async function deleteCourse(c){if(!await confirmAction({title:"Delete course?",message:`“${c.name}” will be deleted. Its tasks and exams stay, but lose their course link.`}))return;try{await api(`/api/courses/${c.id}`,{method:"DELETE"});await Promise.all([loadCourses(),refreshCurrentView()]);showToast("Course deleted. Linked tasks are now uncategorized.");}catch(e){showToast(e.message,true);}}
+function showCourses(){activateView("courses");loadCourses();}
 async function getAllTasks(extra={}){const all=[];let page=1,totalPages=1;do{const params=new URLSearchParams({page:String(page),pageSize:"100",...extra});const result=await api(`/api/tasks?${params}`);all.push(...result.items);totalPages=result.totalPages;page++;}while(page<=totalPages&&page<=20);return all;}
 function taskCourseName(task){const course=state.courses.find(item=>item.id===task.courseId);return course?(course.code?`${course.name} · ${course.code}`:course.name):"No course";}
 function makePlanningTask(task,extraClass=""){const card=document.createElement("article");card.className=`planning-task ${extraClass}`.trim();const open=document.createElement("button");open.type="button";open.className="planning-task-title";open.textContent=task.title;open.addEventListener("click",()=>openTaskDialog(task));const detail=document.createElement("p");detail.textContent=`${taskCourseName(task)} · ${labels.category[task.category]||task.category}${task.dueDate?` · Due ${displayDate(task.dueDate)}`:""}`;card.append(open,detail);return card;}
@@ -448,50 +450,115 @@ function saveTimerPreferences(){if(!state.pomodoro||state.pomodoro.running)retur
 async function loadStudyView(){try{const result=await Promise.all([api("/api/study/summary"),api("/api/study/sessions?limit=30"),getAllTasks()]),summary=result[0],sessions=result[1],tasks=result[2];$("#study-week").textContent=summary.minutesThisWeek+" min";$("#study-month").textContent=summary.minutesThisMonth+" min";$("#study-total").textContent=summary.totalMinutes+" min";const cs=$("#focus-course"),ts=$("#focus-task");cs.replaceChildren(new Option("No course",""),...state.courses.map(c=>new Option(c.code?c.name+" ("+c.code+")":c.name,c.id)));ts.replaceChildren(new Option("No task",""),...tasks.map(t=>new Option(t.title,t.id)));cs.value=state.pomodoro?.courseId||"";ts.value=state.pomodoro?.taskId||"";const list=$("#study-history-list");list.replaceChildren();if(!sessions.length){const empty=document.createElement("p");empty.className="planning-note";empty.textContent="Your completed focus sessions will appear here.";list.append(empty);}else sessions.forEach(s=>{const row=document.createElement("article"),title=document.createElement("strong"),detail=document.createElement("span"),task=tasks.find(t=>t.id===s.taskId),course=state.courses.find(c=>c.id===s.courseId);row.className="study-history-row";title.textContent=s.durationMinutes+" min focus";detail.textContent=[new Intl.DateTimeFormat(undefined,{dateStyle:"medium",timeStyle:"short"}).format(new Date(s.startedAtUtc)),task?.title,course?.name,s.notes].filter(Boolean).join(" · ");row.append(title,detail);list.append(row);});}catch(e){showToast(e.message,true);}}
 async function finishFocus(){const t=state.pomodoro;if(!t||t.mode!=="focus"||!t.running)return;t.running=false;t.remainingMs=0;t.activeSeconds+=Math.max(0,Math.floor((Date.now()-t.runStartedAtMs)/1000));t.endsAtMs=null;saveTimer();paintTimer();const ended=new Date(),seconds=Math.max(60,Math.min(14400,t.activeSeconds));try{await api("/api/study/sessions",{method:"POST",body:JSON.stringify({startedAtUtc:new Date(t.startedAtMs).toISOString(),endedAtUtc:ended.toISOString(),actualFocusSeconds:seconds,courseId:t.courseId||null,taskId:t.taskId||null,notes:t.notes.trim()||null})});const count=t.completedFocuses+1,next=count%4===0?"longBreak":"shortBreak";state.pomodoro=freshTimer(next);state.pomodoro.completedFocuses=count;saveTimer();paintTimer();showToast("Focus session saved. Take a well-earned break.");await Promise.all([loadStudyView(),loadStudyGoals()]);}catch(e){saveTimer();showToast("Session could not be saved: "+e.message,true);}}
 function tickTimer(){const t=state.pomodoro;if(!t?.running)return;paintTimer();if(timerRemaining()<=0){if(t.mode==="focus")void finishFocus();else{const count=t.completedFocuses;state.pomodoro=freshTimer("focus");state.pomodoro.completedFocuses=count;saveTimer();paintTimer();showToast("Break complete. Ready for another focus session?");}}}
-function openStudyView(){state.view="study";$(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.view==="study"));$("#breadcrumb-current").textContent="Focus timer";$(".stats-grid").classList.add("hidden");$(".welcome-row").classList.add("hidden");$(".tasks-panel").classList.add("hidden");$("#courses-panel").classList.add("hidden");$("#planning-panel").classList.add("hidden");$("#exams-panel").classList.add("hidden");$("#study-panel").classList.remove("hidden");closeSidebar();loadStudyView();loadStudyGoals();}
+function openStudyView(){activateView("study");loadStudyView();loadStudyGoals();}
 function editStudyGoal(goal){$("#goal-id").value=goal?.id||"";$("#goal-title").value=goal?.title||"";$("#goal-target").value=goal?.targetMinutesPerWeek||300;$("#goal-course").value=goal?.courseId||"";$("#goal-title").focus();}
 async function loadStudyGoals(){try{const goals=await api("/api/study/goals"),courseSelect=$("#goal-course"),selected=courseSelect.value;courseSelect.replaceChildren(new Option("All courses",""),...state.courses.map(c=>new Option(c.code?c.name+" ("+c.code+")":c.name,c.id)));courseSelect.value=selected;const list=$("#study-goal-list");list.replaceChildren();if(!goals.length){const note=document.createElement("p");note.className="planning-note";note.textContent="Create a weekly goal to track your progress.";list.append(note);}goals.forEach(goal=>{const card=document.createElement("article"),top=document.createElement("div"),title=document.createElement("strong"),count=document.createElement("span"),bar=document.createElement("div"),fill=document.createElement("div"),actions=document.createElement("div"),edit=document.createElement("button"),remove=document.createElement("button"),percent=Math.min(100,Math.round(goal.minutesThisWeek/goal.targetMinutesPerWeek*100));card.className="study-goal-card";top.className="study-goal-top";title.textContent=goal.title;count.textContent=goal.minutesThisWeek+" / "+goal.targetMinutesPerWeek+" min";top.append(title,count);bar.className="goal-progress";bar.setAttribute("role","progressbar");bar.setAttribute("aria-valuemin","0");bar.setAttribute("aria-valuemax",String(goal.targetMinutesPerWeek));bar.setAttribute("aria-valuenow",String(goal.minutesThisWeek));fill.style.width=percent+"%";bar.append(fill);actions.className="course-actions";edit.type="button";edit.className="button button-outline button-small";edit.textContent="Edit";edit.addEventListener("click",()=>editStudyGoal(goal));remove.type="button";remove.className="button button-quiet button-small";remove.textContent="Delete";remove.addEventListener("click",()=>deleteStudyGoal(goal));actions.append(edit,remove);card.append(top,bar,actions);list.append(card);});}catch(e){showToast(e.message,true);}}
 async function saveStudyGoal(event){event.preventDefault();const id=$("#goal-id").value,body={title:$("#goal-title").value.trim(),targetMinutesPerWeek:Number($("#goal-target").value),courseId:$("#goal-course").value||null};try{await api(id?"/api/study/goals/"+id:"/api/study/goals",{method:id?"PUT":"POST",body:JSON.stringify(body)});editStudyGoal(null);await loadStudyGoals();showToast("Study goal saved.");}catch(e){showToast(e.message,true);}}
-async function deleteStudyGoal(goal){if(!confirm("Delete “"+goal.title+"”?"))return;try{await api("/api/study/goals/"+goal.id,{method:"DELETE"});await loadStudyGoals();showToast("Study goal deleted.");}catch(e){showToast(e.message,true);}}
+async function deleteStudyGoal(goal){if(!await confirmAction({title:"Delete study goal?",message:"“"+goal.title+"” will be permanently deleted."}))return;try{await api("/api/study/goals/"+goal.id,{method:"DELETE"});await loadStudyGoals();showToast("Study goal deleted.");}catch(e){showToast(e.message,true);}}
 function localDateTimeValue(utc){const date=new Date(utc);return new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16);}
-async function openExams(){state.view="exams";$(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.view==="exams"));$("#breadcrumb-current").textContent="My exams";$(".stats-grid").classList.add("hidden");$(".welcome-row").classList.add("hidden");$(".tasks-panel").classList.add("hidden");$("#courses-panel").classList.add("hidden");$("#planning-panel").classList.add("hidden");$("#study-panel").classList.add("hidden");$("#exams-panel").classList.remove("hidden");closeSidebar();await loadExamList();}
+async function openExams(){activateView("exams");await loadExamList();}
 async function loadExamList(){try{const exams=await api("/api/exams");$("#exam-list").replaceChildren(...exams.map(renderExam));$("#exam-empty").classList.toggle("hidden",exams.length>0);}catch(e){showToast(e.message,true);}}
 function renderExam(exam){const card=document.createElement("article");card.className="exam-card";const heading=document.createElement("div"),title=document.createElement("h3"),date=document.createElement("strong"),details=document.createElement("p"),actions=document.createElement("div"),edit=document.createElement("button"),remove=document.createElement("button");heading.className="exam-card-heading";title.textContent=exam.title;date.textContent=new Intl.DateTimeFormat(undefined,{weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}).format(new Date(exam.scheduledAtUtc));heading.append(title,date);const course=state.courses.find(c=>c.id===exam.courseId);const until=new Date(exam.scheduledAtUtc)-Date.now();const countdown=until<0?"Past exam":until<86400000?"Today":Math.ceil(until/86400000)+" days away";details.textContent=[course?.name,exam.location,exam.durationMinutes+" min",countdown,exam.description].filter(Boolean).join(" · ");actions.className="course-actions";edit.type="button";edit.className="button button-outline button-small";edit.textContent="Edit";edit.addEventListener("click",()=>examDialog(exam));remove.type="button";remove.className="button button-quiet button-small";remove.textContent="Delete";remove.addEventListener("click",()=>deleteExam(exam));actions.append(edit,remove);card.append(heading,details,actions);return card;}
 function examDialog(exam){$("#exam-form").reset();$("#exam-id").value=exam?.id||"";$("#exam-dialog-title").textContent=exam?"Edit exam":"Add an exam";$("#exam-title").value=exam?.title||"";$("#exam-description").value=exam?.description||"";$("#exam-date").value=exam?localDateTimeValue(exam.scheduledAtUtc):"";$("#exam-duration").value=exam?.durationMinutes||120;$("#exam-location").value=exam?.location||"";$("#exam-course").replaceChildren(new Option("No course",""),...state.courses.map(c=>new Option(c.code?c.name+" ("+c.code+")":c.name,c.id)));$("#exam-course").value=exam?.courseId||"";setMessage($("#exam-form-message"));$("#exam-dialog").showModal();}
 async function saveExam(event){event.preventDefault();const id=$("#exam-id").value;const time=$("#exam-date").value;const body={title:$("#exam-title").value.trim(),description:$("#exam-description").value.trim()||null,scheduledAtUtc:new Date(time).toISOString(),durationMinutes:Number($("#exam-duration").value),courseId:$("#exam-course").value||null,location:$("#exam-location").value.trim()||null};try{await api(id?"/api/exams/"+id:"/api/exams",{method:id?"PUT":"POST",body:JSON.stringify(body)});$("#exam-dialog").close();await loadExamList();showToast("Exam saved.");}catch(e){setMessage($("#exam-form-message"),e.message);}}
-async function deleteExam(exam){if(!confirm("Delete “"+exam.title+"”?"))return;try{await api("/api/exams/"+exam.id,{method:"DELETE"});await loadExamList();showToast("Exam deleted.");}catch(e){showToast(e.message,true);}}
-  function setView(view) {
+async function deleteExam(exam){if(!await confirmAction({title:"Delete exam?",message:"“"+exam.title+"” will be permanently deleted."}))return;try{await api("/api/exams/"+exam.id,{method:"DELETE"});await loadExamList();showToast("Exam deleted.");}catch(e){showToast(e.message,true);}}
+  // One registry describes which panels each view shows. Previously every view
+  // opener hid/showed the panels by hand, and a missed line left stale panels visible.
+  const PANELS = {
+    welcome: ".welcome-row", stats: ".stats-grid", tasks: ".tasks-panel", courses: "#courses-panel",
+    planning: "#planning-panel", exams: "#exams-panel", study: "#study-panel",
+  };
+  const VIEWS = {
+    all: { title: "My tasks", show: ["welcome", "stats", "tasks"] },
+    upcoming: { title: "Upcoming", show: ["welcome", "stats", "tasks"] },
+    completed: { title: "Completed", show: ["welcome", "stats", "tasks"] },
+    calendar: { title: "Calendar", show: ["planning"] },
+    kanban: { title: "Kanban board", show: ["planning"] },
+    planner: { title: "Study planner", show: ["planning"] },
+    courses: { title: "Courses", show: ["courses"] },
+    exams: { title: "Exams", show: ["exams"] },
+    study: { title: "Focus timer", show: ["study"] },
+  };
+
+  function activateView(view) {
+    const config = VIEWS[view];
     state.view = view;
+    $$(".nav-link").forEach(button => {
+      const active = button.dataset.view === view;
+      button.classList.toggle("active", active);
+      if (active) button.setAttribute("aria-current", "page"); else button.removeAttribute("aria-current");
+    });
+    Object.entries(PANELS).forEach(([key, selector]) => $(selector).classList.toggle("hidden", !config.show.includes(key)));
+    $("#breadcrumb-current").textContent = config.title;
+    document.title = `${config.title} · TaskMate`;
+    closeSidebar();
+  }
+
+  function setView(view) {
     state.page = 1;
     // Navigation views own the status filter; do not let a previous manual
     // filter (for example InProgress) override the Completed view.
     $("#status-filter").value = "";
-    $$(".nav-link").forEach(button => button.classList.toggle("active", button.dataset.view === view));
-    $("#study-panel").classList.add("hidden");
-    $("#exams-panel").classList.add("hidden");
+    activateView(view);
     if (["calendar", "kanban", "planner"].includes(view)) {
-      const title = { calendar: "Calendar", kanban: "Kanban board", planner: "Study planner" }[view];
-      $("#breadcrumb-current").textContent = title;
-      $(".stats-grid").classList.add("hidden"); $(".welcome-row").classList.add("hidden");
-      $(".tasks-panel").classList.add("hidden"); $("#courses-panel").classList.add("hidden");
-      $("#planning-panel").classList.remove("hidden");
       $("#planning-prev").classList.toggle("hidden", view !== "calendar");
       $("#planning-next").classList.toggle("hidden", view !== "calendar");
-      renderPlanningView(); closeSidebar(); return;
+      renderPlanningView();
+      return;
     }
-    $("#planning-panel").classList.add("hidden");
-    $("#study-panel").classList.add("hidden");
-    $("#exams-panel").classList.add("hidden");
-    const heading = view === "upcoming" ? "Upcoming" : view === "completed" ? "Completed" : "All tasks";
-    $("#breadcrumb-current").textContent = heading;
-    $("#tasks-heading").firstChild.textContent = `${heading} `;$(".stats-grid").classList.remove("hidden");$(".welcome-row").classList.remove("hidden");$(".tasks-panel").classList.remove("hidden");$("#courses-panel").classList.add("hidden");
+    $("#tasks-heading").firstChild.textContent = `${VIEWS[view].title} `;
     loadTasks();
-    closeSidebar();
+  }
+
+  function openSidebar() {
+    $("#sidebar").classList.add("open");
+    $("#sidebar-scrim").hidden = false;
+    $("#mobile-menu").setAttribute("aria-label", "Close navigation");
+    $("#mobile-menu").setAttribute("aria-expanded", "true");
   }
 
   function closeSidebar() {
     $("#sidebar").classList.remove("open");
+    $("#sidebar-scrim").hidden = true;
     $("#mobile-menu").setAttribute("aria-label", "Open navigation");
+    $("#mobile-menu").setAttribute("aria-expanded", "false");
+  }
+
+  // ----- Theme -----
+  const THEME_KEY = "taskmate.theme";
+  function currentTheme() { return document.documentElement.dataset.theme === "dark" ? "dark" : "light"; }
+  function applyTheme(theme, persist = false) {
+    document.documentElement.dataset.theme = theme;
+    if (persist) { try { localStorage.setItem(THEME_KEY, theme); } catch { /* storage unavailable */ } }
+    const dark = theme === "dark";
+    $("meta[name='theme-color']").setAttribute("content", dark ? "#0e1218" : "#f6f7f9");
+    const toggle = $("#theme-toggle");
+    toggle.setAttribute("aria-pressed", String(dark));
+    toggle.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
+    $("#theme-toggle-icon").setAttribute("href", dark ? "#i-sun" : "#i-moon");
+    $("#auth-theme-toggle").textContent = dark ? "Switch to light theme" : "Switch to dark theme";
+  }
+
+  // ----- Confirmation dialog (replaces window.confirm for destructive actions) -----
+  function confirmAction({ title, message, confirmLabel = "Delete" }) {
+    return new Promise(resolve => {
+      const dialog = $("#confirm-dialog");
+      $("#confirm-title").textContent = title;
+      $("#confirm-message").textContent = message;
+      $("#confirm-ok").textContent = confirmLabel;
+      const finish = result => {
+        dialog.removeEventListener("close", onClose);
+        $("#confirm-cancel").removeEventListener("click", onCancel);
+        resolve(result);
+      };
+      const onClose = () => finish(dialog.returnValue === "ok");
+      const onCancel = () => { dialog.returnValue = "cancel"; dialog.close(); };
+      dialog.returnValue = "cancel";
+      dialog.addEventListener("close", onClose);
+      $("#confirm-cancel").addEventListener("click", onCancel);
+      dialog.showModal();
+      $("#confirm-cancel").focus();
+    });
   }
 
   function bindEvents() {
@@ -535,7 +602,24 @@ async function deleteExam(exam){if(!confirm("Delete “"+exam.title+"”?"))retu
       if (event.target === $("#task-dialog")) $("#task-dialog").close();
     });
 
-    $(".nav-link").forEach(button => button.addEventListener("click", () => button.dataset.view==="courses"?showCourses():button.dataset.view==="study"?openStudyView():button.dataset.view==="exams"?openExams():setView(button.dataset.view)));
+    $$(".nav-link").forEach(button => button.addEventListener("click", () => {
+      const view = button.dataset.view;
+      if (view === "courses") showCourses();
+      else if (view === "study") openStudyView();
+      else if (view === "exams") openExams();
+      else setView(view);
+      $("#main-content").focus({ preventScroll: true });
+    }));
+    $$("[data-theme-toggle]").forEach(button => button.addEventListener("click", () => applyTheme(currentTheme() === "dark" ? "light" : "dark", true)));
+    $("#password-toggle").addEventListener("click", () => {
+      const input = $("#auth-password");
+      const show = input.type === "password";
+      input.type = show ? "text" : "password";
+      $("#password-toggle").setAttribute("aria-pressed", String(show));
+      $("#password-toggle").setAttribute("aria-label", show ? "Hide password" : "Show password");
+      $("#password-toggle-icon").setAttribute("href", show ? "#i-eye-off" : "#i-eye");
+    });
+    $("#sidebar-scrim").addEventListener("click", closeSidebar);
     $("#exam-add").addEventListener("click",()=>examDialog());$("#exam-form").addEventListener("submit",saveExam);$("#exam-cancel").addEventListener("click",()=>$("#exam-dialog").close());$("#exam-close").addEventListener("click",()=>$("#exam-dialog").close());
     $("#focus-start").addEventListener("click",()=>{const t=state.pomodoro;if(!t)return;if(!t.running){const now=Date.now();if(t.mode==="focus"&&!t.startedAtMs){t.startedAtMs=now;t.courseId=$("#focus-course").value;t.taskId=$("#focus-task").value;t.notes=$("#focus-notes").value;}t.runStartedAtMs=now;t.endsAtMs=now+t.remainingMs;t.running=true;saveTimer();paintTimer();}});
     $("#focus-pause").addEventListener("click",()=>{const t=state.pomodoro;if(t?.running){const elapsed=Math.max(0,Math.floor((Date.now()-t.runStartedAtMs)/1000));t.activeSeconds+=t.mode==="focus"?elapsed:0;t.remainingMs=Math.max(0,t.endsAtMs-Date.now());t.running=false;t.endsAtMs=null;saveTimer();paintTimer();}});
@@ -553,9 +637,8 @@ $("#add-course").addEventListener("click",()=>courseDialog());$("#course-empty-a
       $(selector).addEventListener("change", () => {
         state.view = "all";
         state.page = 1;
-        $$(".nav-link").forEach(button => button.classList.toggle("active", button.dataset.view === "all"));
-        $("#breadcrumb-current").textContent = "All tasks";
-        $("#tasks-heading").firstChild.textContent = "All tasks ";
+        activateView("all");
+        $("#tasks-heading").firstChild.textContent = "My tasks ";
         loadTasks();
       });
     });
@@ -573,13 +656,7 @@ $("#add-course").addEventListener("click",()=>courseDialog());$("#course-empty-a
     });
     $("#page-prev").addEventListener("click", () => { if (state.page > 1) { state.page -= 1; loadTasks(); } });
     $("#page-next").addEventListener("click", () => { if (state.page < state.totalPages) { state.page += 1; loadTasks(); } });
-    $("#mobile-menu").addEventListener("click", () => {
-      const open = $("#sidebar").classList.toggle("open");
-      $("#mobile-menu").setAttribute("aria-label", open ? "Close navigation" : "Open navigation");
-    });
-    $(".main-column").addEventListener("click", event => {
-      if (window.innerWidth <= 720 && $("#sidebar").classList.contains("open") && !event.target.closest("#mobile-menu")) closeSidebar();
-    });
+    $("#mobile-menu").addEventListener("click", () => ($("#sidebar").classList.contains("open") ? closeSidebar() : openSidebar()));
     document.addEventListener("keydown", event => {
       if (event.key === "/" && !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName) && !$("#task-dialog").open) {
         event.preventDefault();
@@ -594,6 +671,7 @@ $("#add-course").addEventListener("click",()=>courseDialog());$("#course-empty-a
     $("#year").textContent = year;
     $("#footer-year").textContent = year;
     bindEvents();
+    applyTheme(currentTheme());
     if (!state.token) {
       showAuth();
       return;
