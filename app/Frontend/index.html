@@ -91,6 +91,7 @@
         <button class="nav-link" type="button" data-view="kanban"><span>▤</span><span>Kanban board</span></button>
         <button class="nav-link" type="button" data-view="planner"><span>✳</span><span>Study planner</span></button>
       </nav>
+        <button class="nav-link" type="button" data-view="study"><span>◷</span><span>Focus timer</span></button>
       <div class="sidebar-bottom">
         <div class="sidebar-tip">
           <span class="tip-icon" aria-hidden="true">✦</span>
@@ -143,6 +144,17 @@
 
         <section id="courses-panel" class="courses-panel hidden"><div class="panel-heading"><div><h2>My courses <span id="course-count" class="heading-count">0</span></h2><p>Keep your subjects, instructors, and course codes together.</p></div><button id="add-course" class="button button-primary button-small" type="button">+ Add course</button></div><div id="course-list" class="course-grid"></div><div id="course-empty" class="empty-state hidden"><h3>No courses yet.</h3><button id="course-empty-add" class="button button-primary button-small" type="button">Add your first course</button></div></section>
         <section id="planning-panel" class="planning-panel hidden" aria-live="polite"><div class="panel-heading"><div><span class="section-kicker" id="planning-kicker">PLAN AHEAD</span><h2 id="planning-heading">Calendar</h2><p id="planning-description">See your deadlines in one place.</p></div><div class="planning-controls"><button id="planning-prev" class="page-button" type="button" aria-label="Previous period">←</button><span id="planning-period"></span><button id="planning-next" class="page-button" type="button" aria-label="Next period">→</button></div></div><div id="planning-content"></div></section>
+        <section id="study-panel" class="study-panel hidden" aria-live="polite">
+          <div class="panel-heading"><div><span class="section-kicker">BUILD A STEADY RHYTHM</span><h2>Focus timer</h2><p>Work in focused intervals and keep a record of your study time.</p></div></div>
+          <div class="study-summary" aria-label="Study time summary"><article><span>This week</span><strong id="study-week">0 min</strong></article><article><span>This month</span><strong id="study-month">0 min</strong></article><article><span>All time</span><strong id="study-total">0 min</strong></article></div>
+          <div class="study-layout">
+            <section class="focus-card" aria-label="Pomodoro timer"><label class="field">Session type<select id="focus-mode"><option value="focus">Focus</option><option value="shortBreak">Short break</option><option value="longBreak">Long break</option></select></label><div id="focus-clock" class="focus-clock" role="timer" aria-live="off">25:00</div><p id="focus-status" class="focus-status">Ready when you are.</p>
+              <div class="focus-actions"><button id="focus-start" class="button button-primary" type="button">Start</button><button id="focus-pause" class="button button-outline" type="button" disabled>Pause</button><button id="focus-reset" class="button button-quiet" type="button">Reset</button></div>
+              <div class="focus-settings"><label>Focus minutes<input id="focus-minutes" type="number" min="1" max="240" value="25"></label><label>Short break<input id="short-break-minutes" type="number" min="1" max="60" value="5"></label><label>Long break<input id="long-break-minutes" type="number" min="1" max="90" value="15"></label></div>
+              <div class="focus-links"><label>Course<select id="focus-course"><option value="">No course</option></select></label><label>Task<select id="focus-task"><option value="">No task</option></select></label></div><label class="field">Session note<textarea id="focus-notes" rows="2" maxlength="1000" placeholder="What are you working on?"></textarea></label>
+            </section><section class="study-history"><h3>Recent sessions</h3><div id="study-history-list" class="study-history-list"></div></section>
+          </div>
+        </section>
         <section class="tasks-panel" aria-labelledby="tasks-heading">
           <div class="panel-heading">
             <div><div class="panel-title-row"><span class="section-kicker">YOUR LIST</span><span class="live-indicator"><span></span> Up to date</span></div><h2 id="tasks-heading">All tasks <span id="task-count" class="heading-count">0</span></h2></div>
@@ -186,3 +198,4 @@
   <dialog id="course-dialog" class="task-dialog"><form id="course-form" method="dialog"><h2 id="course-dialog-title">Add a course</h2><input id="course-id" type="hidden"><div class="field"><label for="course-name">Course name *</label><input id="course-name" required minlength="2" maxlength="100"></div><div class="form-grid"><div class="field"><label for="course-code">Course code</label><input id="course-code" maxlength="20"></div><div class="field"><label for="course-instructor">Instructor</label><input id="course-instructor" maxlength="100"></div><div class="field"><label for="course-semester">Semester</label><input id="course-semester" maxlength="40"></div><div class="field"><label for="course-color">Color</label><input id="course-color" type="color" value="#64748b"></div></div><div id="course-form-message" class="form-message" role="alert" hidden></div><div class="dialog-actions"><button id="course-cancel" class="button button-quiet" type="button">Cancel</button><button class="button button-primary" type="submit">Save course</button></div></form></dialog><div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
+

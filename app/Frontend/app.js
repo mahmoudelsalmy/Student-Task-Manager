@@ -15,6 +15,8 @@
     planningDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     loadId: 0,
     toastTimer: null,
+    pomodoro: null,
+    pomodoroTick: null,
   };
 
   const labels = {
@@ -136,6 +138,7 @@
   async function completeSignIn(payload) {
     state.token = payload.accessToken;
     state.user = payload.user;
+    initializeTimer();
     sessionStorage.setItem("taskmate.accessToken", payload.accessToken);
     $("#auth-view").classList.add("hidden");
     $("#app-view").classList.remove("hidden");
@@ -415,7 +418,7 @@ async function loadCourses(){try{state.courses=await api("/api/courses");updateC
 function courseDialog(c=null){$("#course-form").reset();$("#course-id").value=c?.id||"";$("#course-dialog-title").textContent=c?"Edit course":"Add a course";$("#course-name").value=c?.name||"";$("#course-code").value=c?.code||"";$("#course-instructor").value=c?.instructor||"";$("#course-semester").value=c?.semester||"";$("#course-color").value=c?.color||"#64748b";setMessage($("#course-form-message"));$("#course-dialog").showModal();}
 async function saveCourse(e){e.preventDefault();const id=$("#course-id").value;const body={name:$("#course-name").value.trim(),code:$("#course-code").value.trim()||null,instructor:$("#course-instructor").value.trim()||null,semester:$("#course-semester").value.trim()||null,color:$("#course-color").value};try{await api(id?`/api/courses/${id}`:"/api/courses",{method:id?"PUT":"POST",body:JSON.stringify(body)});$("#course-dialog").close();await loadCourses();showToast("Course saved.");}catch(err){setMessage($("#course-form-message"),err.message);}}
 async function deleteCourse(c){if(!confirm(`Delete “${c.name}”?`))return;try{await api(`/api/courses/${c.id}`,{method:"DELETE"});await Promise.all([loadCourses(),refreshCurrentView()]);showToast("Course deleted. Linked tasks are now uncategorized.");}catch(e){showToast(e.message,true);}}
-function showCourses(){state.view="courses";$(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.view==="courses"));$("#breadcrumb-current").textContent="My courses";$(".stats-grid").classList.add("hidden");$(".welcome-row").classList.add("hidden");$(".tasks-panel").classList.add("hidden");$("#planning-panel").classList.add("hidden");$("#courses-panel").classList.remove("hidden");loadCourses();closeSidebar();}
+function showCourses(){state.view="courses";$(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.view==="courses"));$("#breadcrumb-current").textContent="My courses";$(".stats-grid").classList.add("hidden");$(".welcome-row").classList.add("hidden");$(".tasks-panel").classList.add("hidden");$("#planning-panel").classList.add("hidden");$("#study-panel").classList.add("hidden");$("#courses-panel").classList.remove("hidden");loadCourses();closeSidebar();}
 async function getAllTasks(extra={}){const all=[];let page=1,totalPages=1;do{const params=new URLSearchParams({page:String(page),pageSize:"100",...extra});const result=await api(`/api/tasks?${params}`);all.push(...result.items);totalPages=result.totalPages;page++;}while(page<=totalPages&&page<=20);return all;}
 function taskCourseName(task){const course=state.courses.find(item=>item.id===task.courseId);return course?(course.code?`${course.name} · ${course.code}`:course.name):"No course";}
 function makePlanningTask(task,extraClass=""){const card=document.createElement("article");card.className=`planning-task ${extraClass}`.trim();const open=document.createElement("button");open.type="button";open.className="planning-task-title";open.textContent=task.title;open.addEventListener("click",()=>openTaskDialog(task));const detail=document.createElement("p");detail.textContent=`${taskCourseName(task)} · ${labels.category[task.category]||task.category}${task.dueDate?` · Due ${displayDate(task.dueDate)}`:""}`;card.append(open,detail);return card;}
@@ -429,6 +432,18 @@ else if(isPlanner){const days=document.createElement("div");days.className="plan
 else{const board=document.createElement("div");board.className="kanban-board";for(const [status,title] of [["ToDo","To do"],["InProgress","In progress"],["Completed","Completed"]]){const column=document.createElement("section");column.className="kanban-column";const header=document.createElement("div"),h=document.createElement("h3"),count=document.createElement("span");header.className="kanban-column-heading";h.textContent=title;count.textContent=tasks.filter(task=>task.status===status).length;header.append(h,count);column.append(header);tasks.filter(task=>task.status===status).forEach(task=>{const card=makePlanningTask(task,`priority-${task.priority.toLowerCase()}`),select=document.createElement("select");select.setAttribute("aria-label",`Move ${task.title}`);[["ToDo","To do"],["InProgress","In progress"],["Completed","Completed"]].forEach(([value,label])=>select.add(new Option(label,value)));select.value=task.status;select.addEventListener("change",()=>updateTask(task,{status:select.value}));card.append(select);column.append(card);});board.append(column);}panel.append(board);if(!tasks.length)panel.textContent="Nothing here yet. Add a task and it will appear on your board.";}
 }catch(error){panel.textContent=`We couldn’t load this view. ${error.message}`;showToast(error.message,true);}finally{panel.setAttribute("aria-busy","false");}}
 function refreshCurrentView(){return ["calendar","kanban","planner"].includes(state.view)?renderPlanningView():loadTasks();}
+function timerStorageKey(){return "taskmate.pomodoro."+(state.user?.id||"user");}
+function timerDuration(mode){return (mode==="focus"?Number($("#focus-minutes").value):mode==="shortBreak"?Number($("#short-break-minutes").value):Number($("#long-break-minutes").value))*60;}
+function saveTimer(){if(state.pomodoro)sessionStorage.setItem(timerStorageKey(),JSON.stringify(state.pomodoro));}
+function readTimer(){try{return JSON.parse(sessionStorage.getItem(timerStorageKey())||"null");}catch{return null;}}
+function timerRemaining(){const t=state.pomodoro;return !t?0:Math.max(0,t.running?t.endsAtMs-Date.now():t.remainingMs);}
+function paintTimer(){const t=state.pomodoro;if(!t)return;const s=Math.ceil(timerRemaining()/1000);$("#focus-clock").textContent=String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");$("#focus-mode").value=t.mode;$("#focus-start").textContent=t.running?"Running…":"Start / Resume";$("#focus-start").disabled=t.running;$("#focus-pause").disabled=!t.running;$("#focus-status").textContent=t.running?"You’re in a focus interval. Keep going.":t.mode==="focus"?"Ready when you are.":"Take a breath. Your next interval is ready when you are.";}
+function freshTimer(mode){mode=mode||"focus";return {mode:mode,running:false,remainingMs:timerDuration(mode)*1000,endsAtMs:null,runStartedAtMs:null,startedAtMs:null,activeSeconds:0,courseId:"",taskId:"",notes:"",completedFocuses:0};}
+function saveTimerPreferences(){if(!state.pomodoro||state.pomodoro.running)return;state.pomodoro.remainingMs=timerDuration(state.pomodoro.mode)*1000;saveTimer();paintTimer();}
+async function loadStudyView(){try{const result=await Promise.all([api("/api/study/summary"),api("/api/study/sessions?limit=30"),getAllTasks()]),summary=result[0],sessions=result[1],tasks=result[2];$("#study-week").textContent=summary.minutesThisWeek+" min";$("#study-month").textContent=summary.minutesThisMonth+" min";$("#study-total").textContent=summary.totalMinutes+" min";const cs=$("#focus-course"),ts=$("#focus-task");cs.replaceChildren(new Option("No course",""),...state.courses.map(c=>new Option(c.code?c.name+" ("+c.code+")":c.name,c.id)));ts.replaceChildren(new Option("No task",""),...tasks.map(t=>new Option(t.title,t.id)));cs.value=state.pomodoro?.courseId||"";ts.value=state.pomodoro?.taskId||"";const list=$("#study-history-list");list.replaceChildren();if(!sessions.length){const empty=document.createElement("p");empty.className="planning-note";empty.textContent="Your completed focus sessions will appear here.";list.append(empty);}else sessions.forEach(s=>{const row=document.createElement("article"),title=document.createElement("strong"),detail=document.createElement("span"),task=tasks.find(t=>t.id===s.taskId),course=state.courses.find(c=>c.id===s.courseId);row.className="study-history-row";title.textContent=s.durationMinutes+" min focus";detail.textContent=[new Intl.DateTimeFormat(undefined,{dateStyle:"medium",timeStyle:"short"}).format(new Date(s.startedAtUtc)),task?.title,course?.name,s.notes].filter(Boolean).join(" · ");row.append(title,detail);list.append(row);});}catch(e){showToast(e.message,true);}}
+async function finishFocus(){const t=state.pomodoro;if(!t||t.mode!=="focus"||!t.running)return;t.running=false;t.remainingMs=0;t.activeSeconds+=Math.max(0,Math.floor((Date.now()-t.runStartedAtMs)/1000));t.endsAtMs=null;saveTimer();paintTimer();const ended=new Date(),seconds=Math.max(60,Math.min(14400,t.activeSeconds));try{await api("/api/study/sessions",{method:"POST",body:JSON.stringify({startedAtUtc:new Date(t.startedAtMs).toISOString(),endedAtUtc:ended.toISOString(),actualFocusSeconds:seconds,courseId:t.courseId||null,taskId:t.taskId||null,notes:t.notes.trim()||null})});const count=t.completedFocuses+1,next=count%4===0?"longBreak":"shortBreak";state.pomodoro=freshTimer(next);state.pomodoro.completedFocuses=count;saveTimer();paintTimer();showToast("Focus session saved. Take a well-earned break.");await loadStudyView();}catch(e){saveTimer();showToast("Session could not be saved: "+e.message,true);}}
+function tickTimer(){const t=state.pomodoro;if(!t?.running)return;paintTimer();if(timerRemaining()<=0){if(t.mode==="focus")void finishFocus();else{const count=t.completedFocuses;state.pomodoro=freshTimer("focus");state.pomodoro.completedFocuses=count;saveTimer();paintTimer();showToast("Break complete. Ready for another focus session?");}}}
+function openStudyView(){state.view="study";$(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.view==="study"));$("#breadcrumb-current").textContent="Focus timer";$(".stats-grid").classList.add("hidden");$(".welcome-row").classList.add("hidden");$(".tasks-panel").classList.add("hidden");$("#courses-panel").classList.add("hidden");$("#planning-panel").classList.add("hidden");$("#study-panel").classList.remove("hidden");closeSidebar();loadStudyView();}
   function setView(view) {
     state.view = view;
     state.page = 1;
@@ -436,6 +451,7 @@ function refreshCurrentView(){return ["calendar","kanban","planner"].includes(st
     // filter (for example InProgress) override the Completed view.
     $("#status-filter").value = "";
     $$(".nav-link").forEach(button => button.classList.toggle("active", button.dataset.view === view));
+    $("#study-panel").classList.add("hidden");
     if (["calendar", "kanban", "planner"].includes(view)) {
       const title = { calendar: "Calendar", kanban: "Kanban board", planner: "Study planner" }[view];
       $("#breadcrumb-current").textContent = title;
@@ -447,6 +463,7 @@ function refreshCurrentView(){return ["calendar","kanban","planner"].includes(st
       renderPlanningView(); closeSidebar(); return;
     }
     $("#planning-panel").classList.add("hidden");
+    $("#study-panel").classList.add("hidden");
     const heading = view === "upcoming" ? "Upcoming" : view === "completed" ? "Completed" : "All tasks";
     $("#breadcrumb-current").textContent = heading;
     $("#tasks-heading").firstChild.textContent = `${heading} `;$(".stats-grid").classList.remove("hidden");$(".welcome-row").classList.remove("hidden");$(".tasks-panel").classList.remove("hidden");$("#courses-panel").classList.add("hidden");
@@ -500,7 +517,15 @@ function refreshCurrentView(){return ["calendar","kanban","planner"].includes(st
       if (event.target === $("#task-dialog")) $("#task-dialog").close();
     });
 
-    $(".nav-link").forEach(button => button.addEventListener("click", () => button.dataset.view==="courses"?showCourses():setView(button.dataset.view)));
+    $(".nav-link").forEach(button => button.addEventListener("click", () => button.dataset.view==="courses"?showCourses():button.dataset.view==="study"?openStudyView():setView(button.dataset.view)));
+    $("#focus-start").addEventListener("click",()=>{const t=state.pomodoro;if(!t)return;if(!t.running){const now=Date.now();if(t.mode==="focus"&&!t.startedAtMs){t.startedAtMs=now;t.courseId=$("#focus-course").value;t.taskId=$("#focus-task").value;t.notes=$("#focus-notes").value;}t.runStartedAtMs=now;t.endsAtMs=now+t.remainingMs;t.running=true;saveTimer();paintTimer();}});
+    $("#focus-pause").addEventListener("click",()=>{const t=state.pomodoro;if(t?.running){const elapsed=Math.max(0,Math.floor((Date.now()-t.runStartedAtMs)/1000));t.activeSeconds+=t.mode==="focus"?elapsed:0;t.remainingMs=Math.max(0,t.endsAtMs-Date.now());t.running=false;t.endsAtMs=null;saveTimer();paintTimer();}});
+    $("#focus-reset").addEventListener("click",()=>{const count=state.pomodoro?.completedFocuses||0;state.pomodoro=freshTimer($("#focus-mode").value);state.pomodoro.completedFocuses=count;saveTimer();paintTimer();});
+    $("#focus-mode").addEventListener("change",()=>{if(state.pomodoro?.running){showToast("Pause the timer before changing session type.",true);$("#focus-mode").value=state.pomodoro.mode;return;}const count=state.pomodoro?.completedFocuses||0;state.pomodoro=freshTimer($("#focus-mode").value);state.pomodoro.completedFocuses=count;saveTimer();paintTimer();});
+    ["#focus-minutes","#short-break-minutes","#long-break-minutes"].forEach(sel=>$(sel).addEventListener("change",saveTimerPreferences));
+    $("#focus-course").addEventListener("change",()=>{if(state.pomodoro){state.pomodoro.courseId=$("#focus-course").value;saveTimer();}});
+    $("#focus-task").addEventListener("change",()=>{if(state.pomodoro){state.pomodoro.taskId=$("#focus-task").value;saveTimer();}});
+    $("#focus-notes").addEventListener("input",()=>{if(state.pomodoro){state.pomodoro.notes=$("#focus-notes").value;saveTimer();}});
 $("#add-course").addEventListener("click",()=>courseDialog());$("#course-empty-add").addEventListener("click",()=>courseDialog());$("#course-form").addEventListener("submit",saveCourse);$("#course-cancel").addEventListener("click",()=>$("#course-dialog").close());
     $("#planning-prev").addEventListener("click", () => { state.planningDate = new Date(state.planningDate.getFullYear(), state.planningDate.getMonth() - 1, 1); renderPlanningView(); });
     $("#planning-next").addEventListener("click", () => { state.planningDate = new Date(state.planningDate.getFullYear(), state.planningDate.getMonth() + 1, 1); renderPlanningView(); });
@@ -555,6 +580,7 @@ $("#add-course").addEventListener("click",()=>courseDialog());$("#course-empty-a
     }
     try {
       state.user = await api("/api/auth/me");
+      initializeTimer();
       $("#auth-view").classList.add("hidden");
       $("#app-view").classList.remove("hidden");
       $("#profile-name").textContent = state.user.name;
@@ -572,3 +598,4 @@ $("#add-course").addEventListener("click",()=>courseDialog());$("#course-empty-a
 
   initialize();
 })();
+

@@ -278,6 +278,86 @@ public sealed class ApiIntegrationTests : IClassFixture<TaskMateApiFactory>
         Assert.Equal(JsonValueKind.Null, updatedTask.RootElement.GetProperty("courseId").ValueKind);
     }
 
+    [Fact]
+    public async Task StudySessions_AreValidatedOwnerScopedAndIncludedInSummaries()
+    {
+        using var ownerClient = _factory.CreateClient();
+        var ownerToken = await RegisterAndGetToken(ownerClient, $"study-owner-{Guid.NewGuid():N}@example.com");
+        ownerClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ownerToken);
+
+        var courseResponse = await ownerClient.PostAsJsonAsync("/api/courses", new { name = "Study Systems" });
+        Assert.Equal(HttpStatusCode.Created, courseResponse.StatusCode);
+        using var courseBody = JsonDocument.Parse(await courseResponse.Content.ReadAsStringAsync());
+        var courseId = courseBody.RootElement.GetProperty("id").GetGuid();
+        var taskResponse = await ownerClient.PostAsJsonAsync("/api/tasks", new { title = "Review lecture notes", courseId });
+        Assert.Equal(HttpStatusCode.Created, taskResponse.StatusCode);
+        using var taskBody = JsonDocument.Parse(await taskResponse.Content.ReadAsStringAsync());
+        var taskId = taskBody.RootElement.GetProperty("id").GetGuid();
+
+        var end = DateTimeOffset.UtcNow.AddMinutes(-2);
+        var start = end.AddMinutes(-28);
+        var create = await ownerClient.PostAsJsonAsync("/api/study/sessions", new
+        {
+            startedAtUtc = start,
+            endedAtUtc = end,
+            actualFocusSeconds = 25 * 60,
+            courseId,
+            taskId,
+            notes = "Reviewed the lecture examples"
+        });
+        Assert.Equal(HttpStatusCode.Created, create.StatusCode);
+        using var created = JsonDocument.Parse(await create.Content.ReadAsStringAsync());
+        Assert.Equal(25, created.RootElement.GetProperty("durationMinutes").GetInt32());
+        Assert.Equal(courseId, created.RootElement.GetProperty("courseId").GetGuid());
+        Assert.Equal(taskId, created.RootElement.GetProperty("taskId").GetGuid());
+
+        var history = await ownerClient.GetAsync("/api/study/sessions");
+        Assert.Equal(HttpStatusCode.OK, history.StatusCode);
+        using var historyBody = JsonDocument.Parse(await history.Content.ReadAsStringAsync());
+        Assert.Single(historyBody.RootElement.EnumerateArray());
+        var summaryResponse = await ownerClient.GetAsync("/api/study/summary");
+        using var summary = JsonDocument.Parse(await summaryResponse.Content.ReadAsStringAsync());
+        Assert.Equal(1, summary.RootElement.GetProperty("sessions").GetInt32());
+        Assert.Equal(25, summary.RootElement.GetProperty("totalMinutes").GetInt32());
+
+        using var otherClient = _factory.CreateClient();
+        var otherToken = await RegisterAndGetToken(otherClient, $"study-other-{Guid.NewGuid():N}@example.com");
+        otherClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", otherToken);
+        var otherHistory = await otherClient.GetAsync("/api/study/sessions");
+        using var otherHistoryBody = JsonDocument.Parse(await otherHistory.Content.ReadAsStringAsync());
+        Assert.Empty(otherHistoryBody.RootElement.EnumerateArray());
+        var foreignReference = await otherClient.PostAsJsonAsync("/api/study/sessions", new
+        {
+            startedAtUtc = start, endedAtUtc = end, actualFocusSeconds = 25 * 60, courseId, taskId
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, foreignReference.StatusCode);
+
+        var tooMuchFocus = await ownerClient.PostAsJsonAsync("/api/study/sessions", new
+        {
+            startedAtUtc = end.AddMinutes(-1), endedAtUtc = end, actualFocusSeconds = 10 * 60
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, tooMuchFocus.StatusCode);
+        var futureSession = await ownerClient.PostAsJsonAsync("/api/study/sessions", new
+        {
+            startedAtUtc = DateTimeOffset.UtcNow, endedAtUtc = DateTimeOffset.UtcNow.AddMinutes(1), actualFocusSeconds = 60
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, futureSession.StatusCode);
+        var nonUtcRequest = await ownerClient.PostAsJsonAsync("/api/study/sessions", new
+        {
+            startedAtUtc = start.ToOffset(TimeSpan.FromHours(2)),
+            endedAtUtc = end.ToOffset(TimeSpan.FromHours(2)),
+            actualFocusSeconds = 25 * 60
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, nonUtcRequest.StatusCode);
+    }
+
+    [Fact]
+    public async Task StudyEndpoints_RequireAuthentication()
+    {
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _client.GetAsync("/api/study/sessions")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _client.GetAsync("/api/study/summary")).StatusCode);
+    }
+
 }
 
 public sealed class TaskMateApiFactory : WebApplicationFactory<Program>
@@ -310,3 +390,4 @@ public sealed class TaskMateApiFactory : WebApplicationFactory<Program>
         }
     }
 }
+

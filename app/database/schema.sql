@@ -41,6 +41,21 @@ CREATE TABLE "Tasks" (
     CONSTRAINT "FK_Tasks_Courses_CourseId" FOREIGN KEY ("CourseId") REFERENCES "Courses" ("Id") ON DELETE SET NULL
 );
 
+CREATE TABLE "StudySessions" (
+    "Id" TEXT NOT NULL CONSTRAINT "PK_StudySessions" PRIMARY KEY,
+    "UserId" TEXT NOT NULL,
+    "CourseId" TEXT NULL,
+    "TaskId" TEXT NULL,
+    "StartedAtUtc" TEXT NOT NULL,
+    "EndedAtUtc" TEXT NOT NULL,
+    "DurationMinutes" INTEGER NOT NULL,
+    "Notes" TEXT NULL,
+    "CreatedAtUtc" TEXT NOT NULL,
+    CONSTRAINT "FK_StudySessions_Users_UserId" FOREIGN KEY ("UserId") REFERENCES "Users" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_StudySessions_Courses_CourseId" FOREIGN KEY ("CourseId") REFERENCES "Courses" ("Id") ON DELETE SET NULL,
+    CONSTRAINT "FK_StudySessions_Tasks_TaskId" FOREIGN KEY ("TaskId") REFERENCES "Tasks" ("Id") ON DELETE SET NULL
+);
+
 CREATE INDEX "IX_Courses_UserId_Name" ON "Courses" ("UserId", "Name");
 
 CREATE UNIQUE INDEX "IX_Courses_UserId_Code" ON "Courses" ("UserId", "Code");
@@ -50,6 +65,12 @@ CREATE INDEX "IX_Tasks_UserId_DueDate" ON "Tasks" ("UserId", "DueDate");
 CREATE INDEX "IX_Tasks_UserId_Status" ON "Tasks" ("UserId", "Status");
 
 CREATE INDEX "IX_Tasks_CourseId" ON "Tasks" ("CourseId");
+
+CREATE INDEX "IX_StudySessions_UserId_StartedAtUtc" ON "StudySessions" ("UserId", "StartedAtUtc");
+
+CREATE INDEX "IX_StudySessions_CourseId" ON "StudySessions" ("CourseId");
+
+CREATE INDEX "IX_StudySessions_TaskId" ON "StudySessions" ("TaskId");
 
 CREATE UNIQUE INDEX "IX_Users_NormalizedEmail" ON "Users" ("NormalizedEmail");
 
@@ -62,4 +83,8 @@ VALUES ('20261119170000_AddCourses', '10.0.13');
 INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
 VALUES ('20261119173000_LinkTasksToCourses', '10.0.13');
 
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20261119190000_AddStudySessions', '10.0.13');
+
 COMMIT;
+

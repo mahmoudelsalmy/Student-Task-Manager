@@ -56,6 +56,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IStudySessionService, StudySessionService>();
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 builder.Services.AddSingleton<ITokenService>(new JwtTokenService(jwt));
 builder.Services.AddSingleton(TimeProvider.System);
@@ -153,3 +154,4 @@ using (var scope = app.Services.CreateScope())
 await app.RunAsync();
 
 public partial class Program;
+
