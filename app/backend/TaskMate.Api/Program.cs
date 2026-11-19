@@ -108,15 +108,14 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
-// During local development the frontend lives beside the backend project in
-// the repository's top-level Frontend directory. Published builds already
-// include those files under wwwroot, so keep the normal web root for them.
+// During local development, prefer the editable Frontend directory over the
+// copied wwwroot files so changes are visible without serving stale assets.
 var sourceFrontendPath = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", "..", "Frontend"));
 if (app.Environment.IsDevelopment() && Directory.Exists(sourceFrontendPath))
 {
     app.Environment.WebRootFileProvider = new CompositeFileProvider(
-        app.Environment.WebRootFileProvider,
-        new PhysicalFileProvider(sourceFrontendPath));
+        new PhysicalFileProvider(sourceFrontendPath),
+        app.Environment.WebRootFileProvider);
 }
 
 app.UseExceptionHandler();
