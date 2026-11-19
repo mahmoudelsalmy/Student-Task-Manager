@@ -1,20 +1,57 @@
 using System.ComponentModel.DataAnnotations;
+using TaskMate.Api.Domain;
 
 namespace TaskMate.Api.Contracts;
 
-public sealed record RegisterRequest(
-    [param: Required, StringLength(80, MinimumLength = 2)] string Name,
-    [param: Required, EmailAddress, StringLength(254)] string Email,
-    [param: Required, StringLength(128, MinimumLength = 12)] string Password);
+public sealed record CreateTaskRequest(
+    [param: Required, StringLength(120, MinimumLength = 1)] string Title,
+    [param: StringLength(5000)] string? Description = null,
+    DateOnly? DueDate = null,
+    [param: EnumDataType(typeof(TaskPriority))] TaskPriority Priority = TaskPriority.Medium,
+    [param: EnumDataType(typeof(TaskState))] TaskState Status = TaskState.ToDo,
+    [param: EnumDataType(typeof(TaskCategory))] TaskCategory Category = TaskCategory.Assignment);
 
-public sealed record LoginRequest(
-    [param: Required, EmailAddress, StringLength(254)] string Email,
-    [param: Required, StringLength(128, MinimumLength = 1)] string Password);
+public sealed record UpdateTaskRequest(
+    [param: Required, StringLength(120, MinimumLength = 1)] string Title,
+    [param: StringLength(5000)] string? Description,
+    DateOnly? DueDate,
+    [param: EnumDataType(typeof(TaskPriority))] TaskPriority Priority,
+    [param: EnumDataType(typeof(TaskState))] TaskState Status,
+    [param: EnumDataType(typeof(TaskCategory))] TaskCategory Category);
 
-public sealed record UserSummary(Guid Id, string Name, string Email);
+public sealed record TaskQuery(
+    TaskState? Status,
+    TaskCategory? Category,
+    TaskPriority? Priority,
+    string? Search,
+    DateOnly? DueFrom = null,
+    DateOnly? DueThrough = null,
+    bool ExcludeCompleted = false,
+    int Page = 1,
+    int PageSize = 20);
 
-public sealed record AuthResponse(
-    string AccessToken,
-    string TokenType,
-    DateTime ExpiresAtUtc,
-    UserSummary User);
+public sealed record TaskResponse(
+    Guid Id,
+    string Title,
+    string? Description,
+    DateOnly? DueDate,
+    TaskPriority Priority,
+    TaskState Status,
+    TaskCategory Category,
+    DateTime CreatedAtUtc,
+    DateTime UpdatedAtUtc);
+
+public sealed record PagedResult<T>(
+    IReadOnlyList<T> Items,
+    int Page,
+    int PageSize,
+    int TotalCount,
+    int TotalPages);
+
+public sealed record DashboardResponse(
+    DateOnly Today,
+    int TotalTasks,
+    int CompletedTasks,
+    int UpcomingDeadlines,
+    int OverdueTasks,
+    double CompletionPercent);

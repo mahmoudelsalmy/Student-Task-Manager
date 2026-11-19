@@ -26,12 +26,15 @@ public sealed class TasksController(ITaskService taskService) : ControllerBase
         CancellationToken cancellationToken = default)
     {
         if (page < 1 || pageSize is < 1 or > 100 || (search?.Length ?? 0) > 120 ||
+            (status is not null && !Enum.IsDefined(status.Value)) ||
+            (category is not null && !Enum.IsDefined(category.Value)) ||
+            (priority is not null && !Enum.IsDefined(priority.Value)) ||
             (dueFrom is not null && dueThrough is not null && dueFrom > dueThrough))
         {
             return BadRequest(new ProblemDetails
             {
                 Title = "Invalid task query.",
-                Detail = "Page must be at least 1, pageSize must be between 1 and 100, search must be 120 characters or fewer, and dueFrom cannot be after dueThrough.",
+                Detail = "Page must be at least 1, pageSize must be between 1 and 100, enum filters must be valid, search must be 120 characters or fewer, and dueFrom cannot be after dueThrough.",
                 Status = StatusCodes.Status400BadRequest
             });
         }
