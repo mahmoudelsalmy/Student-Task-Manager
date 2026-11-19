@@ -1,79 +1,68 @@
-# Student Task Manager
+# TaskMate
 
-A web-based academic productivity application that helps university students organize subjects, assignments, projects, exams, and deadlines in one place.
+TaskMate is a student productivity web application for managing academic tasks, courses, deadlines, and study time. The current application is an ASP.NET Core API with a same-origin HTML/CSS/JavaScript interface.
 
-> **Course project:** CSE362c / CSE5531 — Fall 2026  
-> **Status:** Proposal and initial planning
+> **Status:** Active development on `docs/taskmate-v2-development-plan`. Pull request [#3](https://github.com/mahmoudelsalmy/Student-Task-Manager/pull/3) is open for review and must not be merged without approval.
 
-## Project goals
+## Current features
 
-- Create and maintain academic tasks.
-- Browse, search, and filter tasks.
-- Track task status, priority, and deadlines.
-- Organize tasks by subject.
-- Review upcoming deadlines and overall progress.
+- Email/password registration and login with JWT authentication.
+- User-scoped task management, search, filters, pagination, status and priority updates.
+- Course management and optional task-course links with ownership validation.
+- Task categories for assignments, exams, projects and personal work.
+- Dashboard task totals and overdue/upcoming counts.
+- Monthly calendar for task deadlines and scheduled exams, status board and seven-day due-date study planner.
+- Exam scheduling with course, date/time, duration, location and notes.
+- Persisted study sessions and an in-app Pomodoro timer with course/task links, session history, weekly/monthly summaries, and course-scoped weekly study goals.
 
-## Required user journeys
+**Known gaps:** The planner still suggests work from task deadlines without saving study blocks. Notifications, advanced task features and analytics remain on the roadmap. See [the audit and roadmap](docs/AUDIT_AND_ROADMAP.md).
 
-| Journey | Goal | Planned behavior |
-|---|---|---|
-| **J1 — Browse or discover** | Find academic tasks | Browse, search, and filter the signed-in user's tasks. |
-| **J2 — Create or submit** | Add a task | Submit a task form; validate it on the server; persist the record. |
-| **J3 — Review or update** | Progress a task | The task owner edits task details or changes its status. |
+## Technology
 
-## Planned technology stack
+- .NET 10 / ASP.NET Core Web API
+- Entity Framework Core 10 with SQLite
+- JWT bearer authentication
+- HTML, CSS and vanilla JavaScript; no frontend package build step
+- xUnit and ASP.NET Core integration tests
 
-- **Frontend:** HTML5, CSS3, JavaScript, Bootstrap
-- **Backend:** C# and ASP.NET Core MVC
-- **Data access:** Entity Framework Core
-- **Database:** SQL Server
-- **Authentication:** ASP.NET Core Identity (planned)
+## Run locally
 
-The application must be server-backed. Browser-side validation alone is not sufficient, and saved data must survive an application restart.
+Requirements: .NET SDK 10.0 or later.
 
-## Planned core features
+From `app/`:
 
-- Authentication and per-user data access
-- Subject management
-- Task creation, viewing, editing, status updates, and deletion
-- Search and filters by title, subject, status, priority, and due date
-- Dashboard summary and upcoming deadlines
-- Responsive, keyboard-accessible interface
+```powershell
+dotnet restore TaskMate.slnx
+dotnet run --project backend/TaskMate.Api/TaskMate.Api.csproj
+```
 
-## Initial data model
+Or use `scripts/run.ps1` on Windows or `scripts/run.sh` on macOS/Linux. The default launch profile listens at `http://localhost:5117`. The app applies EF migrations on startup and creates its SQLite database under `backend/TaskMate.Api/App_Data/`.
 
-- **ApplicationUser:** account and identity information
-- **Subject:** name, optional description, and owner
-- **Task:** title, description, subject, task type, due date, priority, status, and owner
+Production requires a unique JWT signing key of at least 32 bytes and an explicit `AllowedHosts` value. Configure secrets through environment variables; never commit production secrets. See [app/README.md](app/README.md) for configuration, routes, migrations, backups and Docker deployment.
 
-Every task and subject must be scoped to its owner. Authorization and ownership checks must be enforced on the server.
+## Run tests
 
-## Getting started
+From `app/`:
 
-Application source code has not yet been added. Tested prerequisites, database setup, migrations, and run commands will be documented when the implementation is ready.
+```powershell
+dotnet test TaskMate.slnx --configuration Release
+```
 
-Never commit passwords, connection-string secrets, API keys, or real student data.
+GitHub Actions restores, builds and runs the xUnit suite for changes under `app/`. Current automated coverage includes authentication, task/course ownership, task-course relationships, password hashing and validation. Study-session API coverage is being added; browser-level tests are not configured.
 
-## Quality and evidence plan
+## Repository map
 
-The team will maintain reproducible evidence for:
-- Positive and negative validation tests
-- Business-rule tests
-- Data persistence after restart
-- Authorization and cross-user access attempts
-- Browser/server HTTP requests and responses
-- Accessibility, compatibility, and regression checks
-- Diagnosis of at least one issue where initial evidence is insufficient to identify the root cause
+- `app/backend/TaskMate.Api/` — API, domain, contracts, services, repositories and migrations.
+- `app/Frontend/` — application HTML, CSS and JavaScript.
+- `app/tests/TaskMate.Api.Tests/` — unit and API integration tests.
+- `app/database/schema.sql` — SQL for a fresh database at the current migration version.
+- `docs/` — project scope, specification, audit and phased roadmap.
 
-## Repository workflow
+## Data and deployment
 
-- `main`: stable, reviewed work
-- `develop`: integrated development
-- `feature/<short-name>`: individual features
-- Use focused commits that describe one logical change.
-- Open pull requests into `develop`; review before merging.
-- Keep meaningful commit history throughout the project.
+SQLite is suitable for local use or a single application instance. Docker Compose mounts a persistent volume at `/app/data` and requires a production JWT secret and public host name. Back up the SQLite database before upgrades; see the application guide for the backup and deployment procedure. No production deployment has been verified.
 
-## Team
+## License
 
-Add the confirmed team roster and university contact details before submission.
+No license has been selected for this repository yet.
+

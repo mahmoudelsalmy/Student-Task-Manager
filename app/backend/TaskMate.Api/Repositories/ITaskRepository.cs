@@ -7,6 +7,7 @@ public interface ITaskRepository
 {
     Task<(IReadOnlyList<TaskItem> Items, int TotalCount)> FindPageAsync(Guid userId, TaskQuery query, CancellationToken cancellationToken);
     Task<TaskItem?> FindByIdAsync(Guid userId, Guid taskId, CancellationToken cancellationToken);
+    Task<bool> CourseBelongsToUserAsync(Guid userId, Guid courseId, CancellationToken cancellationToken);
     Task AddAsync(TaskItem task, CancellationToken cancellationToken);
     Task SaveChangesAsync(CancellationToken cancellationToken);
     Task DeleteAsync(TaskItem task, CancellationToken cancellationToken);

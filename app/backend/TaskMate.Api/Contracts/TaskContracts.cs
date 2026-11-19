@@ -9,7 +9,8 @@ public sealed record CreateTaskRequest(
     DateOnly? DueDate = null,
     [param: EnumDataType(typeof(TaskPriority))] TaskPriority Priority = TaskPriority.Medium,
     [param: EnumDataType(typeof(TaskState))] TaskState Status = TaskState.ToDo,
-    [param: EnumDataType(typeof(TaskCategory))] TaskCategory Category = TaskCategory.Assignment);
+    [param: EnumDataType(typeof(TaskCategory))] TaskCategory Category = TaskCategory.Assignment,
+    Guid? CourseId = null);
 
 public sealed record UpdateTaskRequest(
     [param: Required, StringLength(120, MinimumLength = 1), RegularExpression(@".*\S.*")] string Title,
@@ -17,7 +18,8 @@ public sealed record UpdateTaskRequest(
     DateOnly? DueDate,
     [param: EnumDataType(typeof(TaskPriority))] TaskPriority Priority,
     [param: EnumDataType(typeof(TaskState))] TaskState Status,
-    [param: EnumDataType(typeof(TaskCategory))] TaskCategory Category);
+    [param: EnumDataType(typeof(TaskCategory))] TaskCategory Category,
+    Guid? CourseId = null);
 
 public sealed record TaskQuery(
     TaskState? Status,
@@ -38,6 +40,7 @@ public sealed record TaskResponse(
     TaskPriority Priority,
     TaskState Status,
     TaskCategory Category,
+    Guid? CourseId,
     DateTime CreatedAtUtc,
     DateTime UpdatedAtUtc);
 

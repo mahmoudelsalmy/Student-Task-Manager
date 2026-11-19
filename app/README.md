@@ -9,7 +9,11 @@ It uses an ASP.NET Core 10 Web API, EF Core 10, SQLite, JWT bearer authenticatio
 - Email and password registration and login. Passwords are salted PBKDF2-HMAC-SHA256 hashes.
 - JWT-protected, user-scoped task and course endpoints.
 - Course management with course name, code, instructor, semester, and display color.
-- Create, view, edit, complete, and delete tasks with due dates, priority, status, category, and notes.
+- Create, view, edit, complete, and delete tasks with due dates, priority, status, category, notes, and an optional course link.
+- Monthly deadline calendar, status-based Kanban board, and a seven-day study planner with suggested time based on upcoming exams and assignments.
+- Authenticated study-session creation, recent-session history, and total/weekly/monthly time summaries, with a Pomodoro focus timer and weekly goals in the browser UI. Browser-level tests are not implemented yet.
+- Weekly study goals with optional course scope and progress calculated from completed sessions.
+- User-owned exam scheduling with course, local-time entry, duration, location and notes; assignments continue to use task categories.
 - Dashboard totals for all tasks, completed tasks, deadlines due within seven days, overdue tasks, and completion percentage.
 - Server-side title search, status/category/priority filters, upcoming date filters, and pagination.
 - Responsive dashboard with mobile navigation and `/` as a keyboard shortcut to search.
@@ -63,18 +67,18 @@ From the `app` directory:
 dotnet test TaskMate.slnx --configuration Release
 ```
 
-The xUnit suite currently covers password hashing and verification, malformed password hashes, task text normalization, timestamps, and per-user task ownership checks. GitHub Actions runs restore, build, and tests for changes under `app/`.
+The xUnit suite covers password hashing and verification, malformed password hashes, task text normalization, timestamps, authentication, task and course ownership, course validation, optional task-course links including deletion behavior, and study-session API behavior. Browser behavior does not yet have automated tests. GitHub Actions runs restore, build, and tests for changes under `app/`.
 
 ## Database migrations
 
-The app runs EF Core `Database.Migrate()` on startup. The initial migration is in `backend/TaskMate.Api/Data/Migrations/`. To manage migrations manually, install EF CLI and run from the repository root:
+The app runs EF Core `Database.Migrate()` on startup. Versioned migrations are in `backend/TaskMate.Api/Data/Migrations/`; `database/schema.sql` describes a fresh database at the latest migration. Back up the database file before upgrading an existing deployment. The automatic startup migrator does not create a backup for you. To manage migrations manually, install EF CLI and run from the repository root:
 
 ```powershell
 dotnet tool install --global dotnet-ef --version 10.0.13
 dotnet ef database update --project backend/TaskMate.Api/TaskMate.Api.csproj
 ```
 
-`database/schema.sql` is generated from the current migration and initializes a fresh SQLite database, for example:
+`database/schema.sql` initializes a fresh SQLite database at the latest migration, for example:
 
 ```powershell
 sqlite3 backend/TaskMate.Api/App_Data/taskmate.db ".read database/schema.sql"
@@ -93,6 +97,18 @@ All JSON properties use camel case. Task statuses are `ToDo`, `InProgress`, and 
 | `POST` | `/api/auth/login` | No | Sign in and return a bearer token |
 | `GET` | `/api/auth/me` | Yes | Return the signed-in profile |
 | `GET` | `/api/dashboard?today=2026-10-22` | Yes | Summary counts using the supplied local date |
+| `GET` | `/api/study/sessions?limit=50` | Yes | List up to 100 most recent owned study sessions |
+| `POST` | `/api/study/sessions` | Yes | Record a completed study session with UTC start/end timestamps, actual focused seconds, and optional owned course/task IDs |
+| `GET` | `/api/study/summary` | Yes | Return all-time, week and month study-minute totals |
+| `GET` | `/api/study/goals` | Yes | List weekly goals with this-week session progress |
+| `POST` | `/api/study/goals` | Yes | Create a weekly goal, optionally scoped to an owned course |
+| `PUT` | `/api/study/goals/{id}` | Yes | Update an owned weekly goal |
+| `DELETE` | `/api/study/goals/{id}` | Yes | Delete an owned weekly goal |
+| `GET` | `/api/exams` | Yes | List the signed-in user's exams ordered by date |
+| `POST` | `/api/exams` | Yes | Schedule an exam and optionally link an owned course; timestamps use UTC |
+| `GET` | `/api/exams/{id}` | Yes | Read an owned exam |
+| `PUT` | `/api/exams/{id}` | Yes | Update an owned exam |
+| `DELETE` | `/api/exams/{id}` | Yes | Delete an owned exam |
 | `GET` | `/api/courses` | Yes | List the signed-in user's courses |
 | `POST` | `/api/courses` | Yes | Create a course |
 | `GET` | `/api/courses/{id}` | Yes | Read one owned course |
@@ -105,6 +121,10 @@ All JSON properties use camel case. Task statuses are `ToDo`, `InProgress`, and 
 | `DELETE` | `/api/tasks/{id}` | Yes | Delete an owned task |
 
 `GET /api/tasks` accepts `status`, `category`, `priority`, `search`, `dueFrom`, `dueThrough`, `excludeCompleted`, `page`, and `pageSize`. Page size is limited to 100. A response has this shape:
+
+Task create and update bodies accept an optional nullable `courseId`. The API only accepts a course owned by the signed-in user; omitting or sending `null` leaves a task unassigned. Deleting a course unlinks its tasks and preserves them.
+
+A study-session request contains `startedAtUtc`, `endedAtUtc`, optional `courseId`, optional `taskId`, and optional `notes`. Sessions must be between 1 and 240 minutes, cannot be in the future, and referenced courses/tasks must belong to the signed-in user. Store and send timestamps as UTC instants.
 
 ```json
 { "items": [], "page": 1, "pageSize": 20, "totalCount": 0, "totalPages": 0 }
@@ -189,3 +209,4 @@ TaskMate/
 ## License
 
 No license has been selected for this repository yet. Add one before redistributing the project.
+

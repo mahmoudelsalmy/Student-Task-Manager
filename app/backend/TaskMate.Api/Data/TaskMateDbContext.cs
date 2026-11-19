@@ -8,6 +8,9 @@ public sealed class TaskMateDbContext(DbContextOptions<TaskMateDbContext> option
     public DbSet<User> Users => Set<User>();
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
     public DbSet<Course> Courses => Set<Course>();
+    public DbSet<StudySession> StudySessions => Set<StudySession>();
+    public DbSet<Exam> Exams => Set<Exam>();
+    public DbSet<StudyGoal> StudyGoals => Set<StudyGoal>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -41,6 +44,38 @@ public sealed class TaskMateDbContext(DbContextOptions<TaskMateDbContext> option
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        modelBuilder.Entity<StudySession>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Notes).HasMaxLength(1000);
+            entity.HasIndex(x => new { x.UserId, x.StartedAtUtc });
+            entity.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<Course>().WithMany().HasForeignKey(x => x.CourseId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne<TaskItem>().WithMany().HasForeignKey(x => x.TaskId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<Exam>(entity =>
+        {
+            entity.HasKey(exam => exam.Id);
+            entity.Property(exam => exam.Title).HasMaxLength(120).IsRequired();
+            entity.Property(exam => exam.Description).HasMaxLength(2000);
+            entity.Property(exam => exam.Location).HasMaxLength(120);
+            entity.HasIndex(exam => new { exam.UserId, exam.ScheduledAtUtc });
+            entity.HasIndex(exam => exam.CourseId);
+            entity.HasOne<User>().WithMany().HasForeignKey(exam => exam.UserId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<Course>().WithMany().HasForeignKey(exam => exam.CourseId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<StudyGoal>(entity =>
+        {
+            entity.HasKey(goal => goal.Id);
+            entity.Property(goal => goal.Title).HasMaxLength(100).IsRequired();
+            entity.HasIndex(goal => goal.UserId);
+            entity.HasIndex(goal => goal.CourseId);
+            entity.HasOne<User>().WithMany().HasForeignKey(goal => goal.UserId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<Course>().WithMany().HasForeignKey(goal => goal.CourseId).OnDelete(DeleteBehavior.SetNull);
+        });
+
         modelBuilder.Entity<TaskItem>(entity =>
         {
             entity.HasKey(task => task.Id);
@@ -51,6 +86,12 @@ public sealed class TaskMateDbContext(DbContextOptions<TaskMateDbContext> option
             entity.Property(task => task.Category).HasConversion<string>().HasMaxLength(16);
             entity.HasIndex(task => new { task.UserId, task.DueDate });
             entity.HasIndex(task => new { task.UserId, task.Status });
+            entity.HasIndex(task => task.CourseId);
+            entity.HasOne(task => task.Course)
+                .WithMany()
+                .HasForeignKey(task => task.CourseId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }
+
