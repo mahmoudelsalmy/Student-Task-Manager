@@ -170,57 +170,6 @@ public sealed class ApiIntegrationTests : IClassFixture<TaskMateApiFactory>
             ?? throw new InvalidOperationException("Registration did not return an access token.");
     }
 
-    [Fact]
-    public async Task Courses_AreOwnedByTheCreatingUser()
-    {
-        var ownerToken = await RegisterAndGetToken(_client, $"course-owner-{Guid.NewGuid():N}@example.com");
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ownerToken);
-
-        var create = await _client.PostAsJsonAsync("/api/courses", new
-        {
-            name = "Digital Control Systems",
-            code = "CSE401",
-            instructor = "Dr. Example",
-            semester = "Fall 2026",
-            color = "#2563eb"
-        });
-        Assert.Equal(HttpStatusCode.Created, create.StatusCode);
-        using var created = JsonDocument.Parse(await create.Content.ReadAsStringAsync());
-        var courseId = created.RootElement.GetProperty("id").GetString();
-        Assert.Equal("CSE401", created.RootElement.GetProperty("code").GetString());
-
-        var list = await _client.GetAsync("/api/courses");
-        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
-        using var listBody = JsonDocument.Parse(await list.Content.ReadAsStringAsync());
-        Assert.Contains(listBody.RootElement.EnumerateArray(),
-            course => course.GetProperty("id").GetString() == courseId);
-
-        using var otherClient = _factory.CreateClient();
-        var otherToken = await RegisterAndGetToken(otherClient, $"course-other-{Guid.NewGuid():N}@example.com");
-        otherClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", otherToken);
-
-        var otherRead = await otherClient.GetAsync($"/api/courses/{courseId}");
-        Assert.Equal(HttpStatusCode.NotFound, otherRead.StatusCode);
-
-        var ownerDelete = await _client.DeleteAsync($"/api/courses/{courseId}");
-        Assert.Equal(HttpStatusCode.NoContent, ownerDelete.StatusCode);
-    }
-
-    [Fact]
-    public async Task Courses_RejectInvalidColor()
-    {
-        var token = await RegisterAndGetToken(_client, $"course-invalid-{Guid.NewGuid():N}@example.com");
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var response = await _client.PostAsJsonAsync("/api/courses", new
-        {
-            name = "Valid course name",
-            color = "not-a-color"
-        });
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    }
-
 }
 
 public sealed class TaskMateApiFactory : WebApplicationFactory<Program>

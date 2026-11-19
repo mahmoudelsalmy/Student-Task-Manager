@@ -20,9 +20,8 @@ public sealed class CoursesController(TaskMateDbContext db, TimeProvider timePro
         var courses = await db.Courses.AsNoTracking()
             .Where(course => course.UserId == userId.Value)
             .OrderBy(course => course.Name)
-            .Select(course => ToResponse(course))
             .ToListAsync(cancellationToken);
-        return Ok(courses);
+        return Ok(courses.Select(ToResponse).ToArray());
     }
 
     [HttpGet("{courseId:guid}")]
