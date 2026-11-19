@@ -1,38 +1,69 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f5f7fb">
-  <meta name="description" content="A calmer way to stay on top of assignments, exams, and everything due next.">
-  <title>TaskMate — your semester, sorted</title>
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f6f7f9">
+  <meta name="description" content="TaskMate keeps your assignments, exams, courses and study time in one place.">
+  <title>TaskMate — your semester, organised</title>
+  <link rel="stylesheet" href="/tokens.css">
   <link rel="stylesheet" href="/styles.css">
+  <script src="/theme-init.js"></script>
   <script src="/app.js" defer></script>
 </head>
 <body>
-  <main id="auth-view" class="auth-shell">
-    <section class="auth-aside" aria-label="TaskMate introduction">
-      <a class="brand brand-light" href="/" aria-label="TaskMate home">
-        <span class="brand-mark" aria-hidden="true">t</span>
-        <span>taskmate<span class="brand-dot">.</span></span>
+  <!-- Icon sprite: one source of truth for every icon in the app. -->
+  <svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-tasks" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5L7.5 17"/></symbol>
+      <symbol id="i-upcoming" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+      <symbol id="i-done" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol>
+      <symbol id="i-board" viewBox="0 0 24 24"><rect x="3.5" y="4" width="5" height="16" rx="1.5"/><rect x="10.5" y="4" width="5" height="10" rx="1.5"/><rect x="17.5" y="4" width="3" height="13" rx="1.5"/></symbol>
+      <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></symbol>
+      <symbol id="i-plan" viewBox="0 0 24 24"><path d="M4 19V5M4 19h16"/><path d="m8 15 3.5-4 3 2.5L19 8"/></symbol>
+      <symbol id="i-course" viewBox="0 0 24 24"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5v-15Z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3"/></symbol>
+      <symbol id="i-exam" viewBox="0 0 24 24"><path d="M7 3.5h8l4 4V20a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 7 20V3.5Z"/><path d="M15 3.5V8h4M10 12.5h6M10 16h4"/></symbol>
+      <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 1.5M9.5 3h5"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></symbol>
+      <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3m9-8h7a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-7"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+      <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 5.7A9.5 9.5 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a16 16 0 0 1-3 3.8M6.5 7A15.7 15.7 0 0 0 2.5 12S6 18.5 12 18.5c1.5 0 2.8-.4 4-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><path d="m12 3.5 9.5 16.5h-19L12 3.5Z"/><path d="M12 10v4.5M12 17.2h.01"/></symbol>
+      <symbol id="i-list" viewBox="0 0 24 24"><path d="M7 4.5h10a2 2 0 0 1 2 2v13H5v-13a2 2 0 0 1 2-2Z"/><path d="M9 4.5v-1h6v1M8.5 10h7M8.5 14h4"/></symbol>
+      <symbol id="i-edit" viewBox="0 0 24 24"><path d="m14 5 5 5M4 20l4.2-.9L19.3 8a2.1 2.1 0 0 0-3-3L5.2 16.1 4 20Z"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+    </defs>
+  </svg>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <!-- ===================== Sign in / Create account ===================== -->
+  <div id="auth-view" class="auth-shell">
+    <section class="auth-aside" aria-label="About TaskMate">
+      <a class="brand brand-on-dark" href="/" aria-label="TaskMate home">
+        <span class="brand-mark" aria-hidden="true">t</span><span class="brand-word">taskmate</span>
       </a>
       <div class="auth-message">
-        <span class="eyebrow">YOUR SEMESTER, SORTED</span>
-        <h1>Make room for<br><em>what matters.</em></h1>
-        <p>One calm place for everything on your plate. Keep the deadlines close and the stress a little further away.</p>
-        <div class="auth-quote">
-          <div class="quote-stars" aria-label="5 stars">★★★★★</div>
-          <p>“I finally feel like I’m ahead of my week, instead of chasing it.”</p>
-          <span>— Maya, 3rd year student</span>
-        </div>
+        <h1>Your whole semester,<br>in one place.</h1>
+        <p>Track assignments and exams, plan your study time, and see what needs attention next.</p>
+        <ul class="auth-points">
+          <li><svg class="icon" aria-hidden="true"><use href="#i-tasks"/></svg><span>Tasks with priorities, deadlines and a Kanban board</span></li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-exam"/></svg><span>Courses and exams linked to your calendar</span></li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-timer"/></svg><span>A focus timer that keeps your study history</span></li>
+        </ul>
       </div>
-      <div class="aside-doodle" aria-hidden="true"><span>✳</span><span>✳</span><span>·</span></div>
-      <p class="aside-footer">A little more focus. A lot less overwhelm.</p>
+      <p class="aside-footer">Built for university students.</p>
     </section>
 
-    <section class="auth-main">
+    <main class="auth-main" id="auth-main">
       <div class="auth-mobile-brand brand">
-        <span class="brand-mark" aria-hidden="true">t</span><span>taskmate<span class="brand-dot">.</span></span>
+        <span class="brand-mark" aria-hidden="true">t</span><span class="brand-word">taskmate</span>
       </div>
       <div class="auth-card">
         <div class="auth-heading">
@@ -55,138 +86,163 @@
           </div>
           <div class="field">
             <div class="label-row"><label for="auth-password">Password</label><span id="password-hint" class="field-hint hidden">12 characters minimum</span></div>
-            <input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required placeholder="At least 12 characters">
+            <div class="input-with-action">
+              <input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required placeholder="At least 12 characters">
+              <button id="password-toggle" class="input-action" type="button" aria-label="Show password" aria-pressed="false">
+                <svg class="icon" aria-hidden="true"><use id="password-toggle-icon" href="#i-eye"/></svg>
+              </button>
+            </div>
           </div>
           <div id="auth-message" class="form-message" role="alert" hidden></div>
-          <button id="auth-submit" class="button button-primary button-wide" type="submit">
-            <span>Sign in</span><span aria-hidden="true">→</span>
-          </button>
+          <button id="auth-submit" class="button button-primary button-wide" type="submit"><span>Sign in</span><span aria-hidden="true">→</span></button>
         </form>
-        <p class="auth-terms">By continuing, you agree to use TaskMate kindly and responsibly.</p>
+        <button id="auth-theme-toggle" class="link-button auth-theme" type="button" data-theme-toggle>Switch theme</button>
       </div>
-      <p class="auth-copyright">© <span id="year"></span> TaskMate · Made for the student in you.</p>
-    </section>
-  </main>
+      <p class="auth-copyright">© <span id="year"></span> TaskMate</p>
+    </main>
+  </div>
 
+  <!-- ===================== Application ===================== -->
   <div id="app-view" class="app-shell hidden">
-    <aside class="sidebar" id="sidebar">
-      <a class="brand" href="#dashboard" aria-label="TaskMate dashboard">
-        <span class="brand-mark" aria-hidden="true">t</span><span>taskmate<span class="brand-dot">.</span></span>
+    <aside class="sidebar" id="sidebar" aria-label="Sidebar">
+      <a class="brand" href="/" aria-label="TaskMate">
+        <span class="brand-mark" aria-hidden="true">t</span><span class="brand-word">taskmate</span>
       </a>
-      <div class="workspace-label">YOUR WORKSPACE</div>
+
       <nav class="side-nav" aria-label="Main navigation">
-        <button class="nav-link active" type="button" data-view="all">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"></rect><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"></rect><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"></rect><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"></rect></svg>
-          <span>All tasks</span><span id="nav-total" class="nav-count">0</span>
-        </button>
-        <button class="nav-link" type="button" data-view="upcoming">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="15" rx="2.5"></rect><path d="M7.5 3.5v4M16.5 3.5v4M3.5 10h17M8 14h3M8 17h6"></path></svg>
-          <span>Upcoming</span><span id="nav-upcoming" class="nav-count muted">0</span>
-        </button>
-        <button class="nav-link" type="button" data-view="completed">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="m8.5 12 2.3 2.3 4.8-5"></path></svg>
-          <span>Completed</span>
-        </button><button class="nav-link" type="button" data-view="courses"><span>▦</span><span>My courses</span><span id="nav-courses" class="nav-count muted">0</span></button>
-        <button class="nav-link" type="button" data-view="calendar"><span>▦</span><span>Calendar</span></button>
-        <button class="nav-link" type="button" data-view="kanban"><span>▤</span><span>Kanban board</span></button>
-        <button class="nav-link" type="button" data-view="planner"><span>✳</span><span>Study planner</span></button>
-      </nav>
-        <button class="nav-link" type="button" data-view="study"><span>◷</span><span>Focus timer</span></button>
-        <button class="nav-link" type="button" data-view="exams"><span>⌁</span><span>My exams</span></button>
-      <div class="sidebar-bottom">
-        <div class="sidebar-tip">
-          <span class="tip-icon" aria-hidden="true">✦</span>
-          <p><strong>Small steps count.</strong><br>One task at a time is still progress.</p>
+        <div class="nav-group" role="group" aria-labelledby="nav-h-workspace">
+          <div class="nav-heading" id="nav-h-workspace">Workspace</div>
+          <button class="nav-link active" type="button" data-view="all" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-tasks"/></svg><span class="nav-label">My tasks</span><span id="nav-total" class="nav-count">0</span></button>
+          <button class="nav-link" type="button" data-view="upcoming"><svg class="icon" aria-hidden="true"><use href="#i-upcoming"/></svg><span class="nav-label">Upcoming</span><span id="nav-upcoming" class="nav-count">0</span></button>
+          <button class="nav-link" type="button" data-view="completed"><svg class="icon" aria-hidden="true"><use href="#i-done"/></svg><span class="nav-label">Completed</span></button>
         </div>
-        <button id="logout-button" class="profile-button" type="button">
-          <span id="avatar" class="avatar">S</span>
+        <div class="nav-group" role="group" aria-labelledby="nav-h-plan">
+          <div class="nav-heading" id="nav-h-plan">Plan</div>
+          <button class="nav-link" type="button" data-view="kanban"><svg class="icon" aria-hidden="true"><use href="#i-board"/></svg><span class="nav-label">Kanban board</span></button>
+          <button class="nav-link" type="button" data-view="calendar"><svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg><span class="nav-label">Calendar</span></button>
+          <button class="nav-link" type="button" data-view="planner"><svg class="icon" aria-hidden="true"><use href="#i-plan"/></svg><span class="nav-label">Study planner</span></button>
+        </div>
+        <div class="nav-group" role="group" aria-labelledby="nav-h-academics">
+          <div class="nav-heading" id="nav-h-academics">Academics</div>
+          <button class="nav-link" type="button" data-view="courses"><svg class="icon" aria-hidden="true"><use href="#i-course"/></svg><span class="nav-label">Courses</span><span id="nav-courses" class="nav-count">0</span></button>
+          <button class="nav-link" type="button" data-view="exams"><svg class="icon" aria-hidden="true"><use href="#i-exam"/></svg><span class="nav-label">Exams</span></button>
+        </div>
+        <div class="nav-group" role="group" aria-labelledby="nav-h-focus">
+          <div class="nav-heading" id="nav-h-focus">Focus</div>
+          <button class="nav-link" type="button" data-view="study"><svg class="icon" aria-hidden="true"><use href="#i-timer"/></svg><span class="nav-label">Focus timer</span></button>
+        </div>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="profile">
+          <span id="avatar" class="avatar" aria-hidden="true">S</span>
           <span class="profile-copy"><strong id="profile-name">Student</strong><small id="profile-email">student@example.com</small></span>
-          <svg class="logout-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3m9-8h7a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-7"></path></svg>
-        </button>
+          <button id="logout-button" class="icon-button" type="button" aria-label="Sign out" title="Sign out"><svg class="icon" aria-hidden="true"><use href="#i-logout"/></svg></button>
+        </div>
       </div>
     </aside>
+    <div id="sidebar-scrim" class="scrim" hidden></div>
 
-    <section class="main-column">
+    <div class="main-column">
       <header class="topbar">
-        <button id="mobile-menu" class="icon-button menu-button" type="button" aria-label="Open navigation">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
-        </button>
-        <div class="breadcrumb"><span>Workspace</span><span class="crumb-slash">/</span><strong id="breadcrumb-current">All tasks</strong></div>
+        <button id="mobile-menu" class="icon-button menu-button" type="button" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
+        <div class="breadcrumb"><span class="crumb-root">Workspace</span><span class="crumb-slash" aria-hidden="true">/</span><strong id="breadcrumb-current">My tasks</strong></div>
         <div class="topbar-actions">
-          <span class="today-chip"><span class="today-dot"></span><span id="today-label"></span></span>
-          <button id="add-task-top" class="button button-primary button-small" type="button"><span class="plus">+</span><span>New task</span></button>
+          <span class="today-chip"><span id="today-label"></span></span>
+          <button id="theme-toggle" class="icon-button" type="button" data-theme-toggle aria-label="Switch to dark theme" aria-pressed="false" title="Toggle theme"><svg class="icon" aria-hidden="true"><use id="theme-toggle-icon" href="#i-moon"/></svg></button>
+          <button id="add-task-top" class="button button-primary button-small" type="button"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span>New task</span></button>
         </div>
       </header>
 
-      <main class="dashboard-content">
+      <main id="main-content" class="dashboard-content" tabindex="-1">
         <div class="welcome-row">
-          <div><span id="welcome-date" class="eyebrow"></span><h1 id="welcome-title">A good day starts with a plan.</h1><p id="welcome-copy">Let’s see what needs your attention.</p></div>
-          <div class="welcome-spark" aria-hidden="true">✳</div>
+          <div><span id="welcome-date" class="eyebrow"></span><h1 id="welcome-title">Welcome back.</h1><p id="welcome-copy">Here’s what needs your attention.</p></div>
         </div>
 
         <section class="stats-grid" aria-label="Task overview">
-          <article class="stat-card stat-total">
-            <div class="stat-top"><span class="stat-icon icon-lavender"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h10a2 2 0 0 1 2 2v13H5v-13a2 2 0 0 1 2-2Z"></path><path d="M9 4.5v-1h6v1M8 10h8M8 14h5"></path></svg></span><span class="stat-label">Total tasks</span></div>
+          <article class="stat-card">
+            <div class="stat-top"><span class="stat-icon tone-primary"><svg class="icon" aria-hidden="true"><use href="#i-list"/></svg></span><span class="stat-label">Total tasks</span></div>
             <div class="stat-value" id="stat-total">0</div><div class="stat-note">Across your semester</div>
           </article>
-          <article class="stat-card stat-done">
-            <div class="stat-top"><span class="stat-icon icon-mint"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="m8.5 12 2.3 2.3 4.8-5"></path></svg></span><span class="stat-label">Completed</span></div>
+          <article class="stat-card">
+            <div class="stat-top"><span class="stat-icon tone-success"><svg class="icon" aria-hidden="true"><use href="#i-done"/></svg></span><span class="stat-label">Completed</span></div>
             <div class="stat-value" id="stat-completed">0</div><div class="stat-note"><span id="completion-percent">0%</span> of your tasks</div>
           </article>
-          <article class="stat-card stat-upcoming">
-            <div class="stat-top"><span class="stat-icon icon-peach"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7v5l3 2"></path></svg></span><span class="stat-label">Due this week</span></div>
+          <article class="stat-card">
+            <div class="stat-top"><span class="stat-icon tone-warning"><svg class="icon" aria-hidden="true"><use href="#i-upcoming"/></svg></span><span class="stat-label">Due this week</span></div>
             <div class="stat-value" id="stat-upcoming">0</div><div class="stat-note">Coming up in 7 days</div>
           </article>
-          <article class="stat-card stat-overdue">
-            <div class="stat-top"><span class="stat-icon icon-rose"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 16H3l9-16Z"></path><path d="M12 9v4m0 3h.01"></path></svg></span><span class="stat-label">Needs attention</span></div>
-            <div class="stat-value" id="stat-overdue">0</div><div class="stat-note">Overdue tasks</div>
+          <article class="stat-card">
+            <div class="stat-top"><span class="stat-icon tone-danger"><svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg></span><span class="stat-label">Overdue</span></div>
+            <div class="stat-value" id="stat-overdue">0</div><div class="stat-note">Needs attention</div>
           </article>
         </section>
 
-        <section id="courses-panel" class="courses-panel hidden"><div class="panel-heading"><div><h2>My courses <span id="course-count" class="heading-count">0</span></h2><p>Keep your subjects, instructors, and course codes together.</p></div><button id="add-course" class="button button-primary button-small" type="button">+ Add course</button></div><div id="course-list" class="course-grid"></div><div id="course-empty" class="empty-state hidden"><h3>No courses yet.</h3><button id="course-empty-add" class="button button-primary button-small" type="button">Add your first course</button></div></section>
-        <section id="planning-panel" class="planning-panel hidden" aria-live="polite"><div class="panel-heading"><div><span class="section-kicker" id="planning-kicker">PLAN AHEAD</span><h2 id="planning-heading">Calendar</h2><p id="planning-description">See your deadlines in one place.</p></div><div class="planning-controls"><button id="planning-prev" class="page-button" type="button" aria-label="Previous period">←</button><span id="planning-period"></span><button id="planning-next" class="page-button" type="button" aria-label="Next period">→</button></div></div><div id="planning-content"></div></section>
-        <section id="exams-panel" class="planning-panel hidden" aria-live="polite"><div class="panel-heading"><div><span class="section-kicker">KNOW WHAT'S COMING</span><h2>My exams</h2><p>Keep exam times, rooms, and course details together.</p></div><button id="exam-add" class="button button-primary button-small" type="button">+ Add exam</button></div><div id="exam-list" class="exam-list"></div><div id="exam-empty" class="empty-state hidden"><h3>No exams scheduled.</h3><p>Add an exam to keep its date and details close.</p></div></section>
-        <section id="study-panel" class="study-panel hidden" aria-live="polite">
-          <div class="panel-heading"><div><span class="section-kicker">BUILD A STEADY RHYTHM</span><h2>Focus timer</h2><p>Work in focused intervals and keep a record of your study time.</p></div></div>
-          <div class="study-summary" aria-label="Study time summary"><article><span>This week</span><strong id="study-week">0 min</strong></article><article><span>This month</span><strong id="study-month">0 min</strong></article><article><span>All time</span><strong id="study-total">0 min</strong></article></div>
-          <section class="goals-panel"><div class="goals-heading"><div><h3>Weekly study goals</h3><p>Set a target and see how your completed sessions add up.</p></div></div><form id="goal-form" class="goal-form"><input id="goal-id" type="hidden"><label>Goal name<input id="goal-title" required minlength="2" maxlength="100" placeholder="e.g. Review chemistry"></label><label>Minutes per week<input id="goal-target" type="number" min="30" max="3000" value="300" required></label><label>Course<select id="goal-course"><option value="">All courses</option></select></label><button class="button button-primary button-small" type="submit">Save goal</button></form><div id="study-goal-list" class="study-goal-list"></div></section>
+        <section id="courses-panel" class="panel hidden" aria-labelledby="courses-heading">
+          <div class="panel-heading"><div><h2 id="courses-heading">Courses <span id="course-count" class="heading-count">0</span></h2><p>Keep your subjects, instructors and course codes together.</p></div><button id="add-course" class="button button-primary button-small" type="button"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span>Add course</span></button></div>
+          <div id="course-list" class="course-grid"></div>
+          <div id="course-empty" class="empty-state hidden"><h3>No courses yet</h3><p>Add your courses to group tasks, exams and study time by subject.</p><button id="course-empty-add" class="button button-primary button-small" type="button">Add your first course</button></div>
+        </section>
+
+        <section id="planning-panel" class="panel hidden" aria-live="polite" aria-labelledby="planning-heading">
+          <div class="panel-heading"><div><span class="section-kicker" id="planning-kicker">PLAN AHEAD</span><h2 id="planning-heading">Calendar</h2><p id="planning-description">See your deadlines in one place.</p></div><div class="planning-controls"><button id="planning-prev" class="page-button" type="button" aria-label="Previous period">←</button><span id="planning-period"></span><button id="planning-next" class="page-button" type="button" aria-label="Next period">→</button><button id="plan-block-add" class="button button-primary button-small hidden" type="button"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span>Plan a study block</span></button></div></div>
+          <div id="planning-content"></div>
+        </section>
+
+        <section id="exams-panel" class="panel hidden" aria-live="polite" aria-labelledby="exams-heading">
+          <div class="panel-heading"><div><h2 id="exams-heading">Exams</h2><p>Keep exam times, rooms and course details together.</p></div><button id="exam-add" class="button button-primary button-small" type="button"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span>Add exam</span></button></div>
+          <div id="exam-list" class="exam-list"></div>
+          <div id="exam-empty" class="empty-state hidden"><h3>No exams scheduled</h3><p>Add an exam to keep its date, place and course close.</p></div>
+        </section>
+
+        <section id="study-panel" class="panel study-panel hidden" aria-live="polite" aria-labelledby="study-heading">
+          <div class="panel-heading"><div><h2 id="study-heading">Focus timer</h2><p>Work in focused intervals and keep a record of your study time.</p></div></div>
+          <div class="study-summary" role="group" aria-label="Study time summary"><article><span>This week</span><strong id="study-week">0 min</strong></article><article><span>This month</span><strong id="study-month">0 min</strong></article><article><span>All time</span><strong id="study-total">0 min</strong></article></div>
+          <section class="goals-panel" aria-labelledby="goals-heading"><div class="goals-heading"><div><h3 id="goals-heading">Weekly study goals</h3><p>Set a target and see how your completed sessions add up.</p></div></div><form id="goal-form" class="goal-form"><input id="goal-id" type="hidden"><label>Goal name<input id="goal-title" required minlength="2" maxlength="100" placeholder="e.g. Review chemistry"></label><label>Minutes per week<input id="goal-target" type="number" min="30" max="3000" value="300" required></label><label>Course<select id="goal-course"><option value="">All courses</option></select></label><button class="button button-primary button-small" type="submit">Save goal</button></form><div id="study-goal-list" class="study-goal-list"></div></section>
           <div class="study-layout">
-            <section class="focus-card" aria-label="Pomodoro timer"><label class="field">Session type<select id="focus-mode"><option value="focus">Focus</option><option value="shortBreak">Short break</option><option value="longBreak">Long break</option></select></label><div id="focus-clock" class="focus-clock" role="timer" aria-live="off">25:00</div><p id="focus-status" class="focus-status">Ready when you are.</p>
+            <section class="focus-card" aria-label="Pomodoro timer">
+              <label class="field">Session type<select id="focus-mode"><option value="focus">Focus</option><option value="shortBreak">Short break</option><option value="longBreak">Long break</option></select></label>
+              <div id="focus-clock" class="focus-clock" role="timer" aria-live="off">25:00</div>
+              <p id="focus-status" class="focus-status">Ready when you are.</p>
               <div class="focus-actions"><button id="focus-start" class="button button-primary" type="button">Start</button><button id="focus-pause" class="button button-outline" type="button" disabled>Pause</button><button id="focus-reset" class="button button-quiet" type="button">Reset</button></div>
               <div class="focus-settings"><label>Focus minutes<input id="focus-minutes" type="number" min="1" max="240" value="25"></label><label>Short break<input id="short-break-minutes" type="number" min="1" max="60" value="5"></label><label>Long break<input id="long-break-minutes" type="number" min="1" max="90" value="15"></label></div>
-              <div class="focus-links"><label>Course<select id="focus-course"><option value="">No course</option></select></label><label>Task<select id="focus-task"><option value="">No task</option></select></label></div><label class="field">Session note<textarea id="focus-notes" rows="2" maxlength="1000" placeholder="What are you working on?"></textarea></label>
-            </section><section class="study-history"><h3>Recent sessions</h3><div id="study-history-list" class="study-history-list"></div></section>
+              <div class="focus-links"><label>Course<select id="focus-course"><option value="">No course</option></select></label><label>Task<select id="focus-task"><option value="">No task</option></select></label></div>
+              <label class="field">Session note<textarea id="focus-notes" rows="2" maxlength="1000" placeholder="What are you working on?"></textarea></label>
+            </section>
+            <section class="study-history" aria-labelledby="history-heading"><h3 id="history-heading">Recent sessions</h3><div id="study-history-list" class="study-history-list"></div></section>
           </div>
         </section>
-        <section class="tasks-panel" aria-labelledby="tasks-heading">
+
+        <section class="tasks-panel panel" aria-labelledby="tasks-heading">
           <div class="panel-heading">
-            <div><div class="panel-title-row"><span class="section-kicker">YOUR LIST</span><span class="live-indicator"><span></span> Up to date</span></div><h2 id="tasks-heading">All tasks <span id="task-count" class="heading-count">0</span></h2></div>
-            <button id="add-task-panel" class="button button-outline button-small" type="button"><span class="plus">+</span><span>Add task</span></button>
+            <div><h2 id="tasks-heading">My tasks <span id="task-count" class="heading-count">0</span></h2></div>
+            <button id="add-task-panel" class="button button-outline button-small" type="button"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span>Add task</span></button>
           </div>
           <div class="filter-bar">
-            <label class="search-box" for="task-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 4.5 4.5"></path></svg><input id="task-search" type="search" placeholder="Search your tasks" maxlength="120" autocomplete="off"><kbd>/</kbd></label>
+            <label class="search-box" for="task-search"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><span class="sr-only">Search tasks</span><input id="task-search" type="search" placeholder="Search tasks" maxlength="120" autocomplete="off"><kbd aria-hidden="true">/</kbd></label>
             <div class="filter-controls">
               <label class="sr-only" for="status-filter">Filter by status</label><select id="status-filter"><option value="">Any status</option><option value="ToDo">To do</option><option value="InProgress">In progress</option><option value="Completed">Completed</option></select>
               <label class="sr-only" for="category-filter">Filter by category</label><select id="category-filter"><option value="">Any category</option><option value="Assignment">Assignment</option><option value="Exam">Exam</option><option value="Project">Project</option><option value="Personal">Personal</option></select>
               <label class="sr-only" for="priority-filter">Filter by priority</label><select id="priority-filter"><option value="">Any priority</option><option value="High">High priority</option><option value="Medium">Medium priority</option><option value="Low">Low priority</option></select>
-              <button id="clear-filters" class="clear-filters" type="button">Clear</button>
+              <button id="clear-filters" class="link-button" type="button">Clear</button>
             </div>
           </div>
           <div id="task-list" class="task-list" aria-live="polite" aria-busy="false"></div>
-          <div id="task-empty" class="empty-state hidden"><div class="empty-illustration" aria-hidden="true"><span>✓</span><i></i><b></b></div><h3 id="empty-title">Your list is clear.</h3><p id="empty-copy">Add your first task and give your week a little shape.</p><button id="empty-add" class="button button-primary button-small" type="button"><span class="plus">+</span><span>Create your first task</span></button></div>
+          <div id="task-empty" class="empty-state hidden"><div class="empty-illustration" aria-hidden="true"><svg class="icon"><use href="#i-done"/></svg></div><h3 id="empty-title">Your list is clear</h3><p id="empty-copy">Add your first task to get started.</p><button id="empty-add" class="button button-primary button-small" type="button"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span>Create a task</span></button></div>
           <div id="pagination" class="pagination hidden"><span id="page-summary">Showing 0 tasks</span><div><button id="page-prev" class="page-button" type="button" aria-label="Previous page">←</button><button id="page-next" class="page-button" type="button" aria-label="Next page">→</button></div></div>
         </section>
-        <footer class="page-footer"><span>Made for busy brains and big dreams.</span><span>TaskMate <span class="brand-dot">·</span> <span id="footer-year"></span></span></footer>
+        <footer class="page-footer"><span>TaskMate</span><span>© <span id="footer-year"></span></span></footer>
       </main>
-    </section>
+    </div>
   </div>
 
-  <dialog id="task-dialog" class="task-dialog" aria-labelledby="dialog-title">
+  <!-- ===================== Dialogs ===================== -->
+  <dialog id="task-dialog" class="dialog" aria-labelledby="dialog-title">
     <form id="task-form" method="dialog">
-      <div class="dialog-heading"><div><span class="eyebrow">A LITTLE PLAN GOES A LONG WAY</span><h2 id="dialog-title">Add a task</h2><p>Give it a name and the rest can fall into place.</p></div><button id="dialog-close" class="icon-button close-button" type="button" aria-label="Close dialog">×</button></div>
+      <div class="dialog-heading"><div><h2 id="dialog-title">Add a task</h2><p>Give it a name; everything else is optional.</p></div><button id="dialog-close" class="icon-button" type="button" aria-label="Close dialog"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button></div>
       <input id="task-id" type="hidden">
-      <div class="field"><label for="task-title">Task name <span class="required-star">*</span></label><input id="task-title" name="title" required maxlength="120" placeholder="e.g. Read chapter 4 for biology"><span class="field-hint">Keep it clear and easy to scan.</span></div>
-      <div class="field"><label for="task-description">Notes <span class="optional-label">Optional</span></label><textarea id="task-description" name="description" rows="3" maxlength="5000" placeholder="Add a few details or reminders..."></textarea></div>
+      <div class="field"><label for="task-title">Task name <span class="required-star" aria-hidden="true">*</span></label><input id="task-title" name="title" required maxlength="120" placeholder="e.g. Read chapter 4 for biology"></div>
+      <div class="field"><label for="task-description">Notes <span class="optional-label">Optional</span></label><textarea id="task-description" name="description" rows="3" maxlength="5000" placeholder="Add details or reminders"></textarea></div>
       <div class="form-grid">
         <div class="field"><label for="task-due">Due date</label><input id="task-due" name="dueDate" type="date"></div>
         <div class="field"><label for="task-category">Category</label><select id="task-category" name="category"><option value="Assignment">Assignment</option><option value="Exam">Exam</option><option value="Project">Project</option><option value="Personal">Personal</option></select></div>
@@ -198,8 +254,58 @@
       <div class="dialog-actions"><button id="dialog-cancel" class="button button-quiet" type="button">Cancel</button><button id="task-save" class="button button-primary" type="submit">Save task <span aria-hidden="true">→</span></button></div>
     </form>
   </dialog>
-  <dialog id="exam-dialog" class="task-dialog"><form id="exam-form" method="dialog"><div class="dialog-heading"><div><span class="eyebrow">PLAN FOR EXAM DAY</span><h2 id="exam-dialog-title">Add an exam</h2><p>Save the time, place, and course so nothing slips past.</p></div><button id="exam-close" class="icon-button close-button" type="button" aria-label="Close dialog">×</button></div><input id="exam-id" type="hidden"><div class="field"><label for="exam-title">Exam name *</label><input id="exam-title" required minlength="2" maxlength="120" placeholder="e.g. Biology midterm"></div><div class="field"><label for="exam-description">Topics or notes</label><textarea id="exam-description" rows="3" maxlength="2000"></textarea></div><div class="form-grid"><div class="field"><label for="exam-date">Date and time *</label><input id="exam-date" type="datetime-local" required></div><div class="field"><label for="exam-duration">Duration (minutes)</label><input id="exam-duration" type="number" min="15" max="600" value="120" required></div><div class="field"><label for="exam-course">Course</label><select id="exam-course"><option value="">No course</option></select></div><div class="field"><label for="exam-location">Location</label><input id="exam-location" maxlength="120" placeholder="Building or room"></div></div><div id="exam-form-message" class="form-message" role="alert" hidden></div><div class="dialog-actions"><button id="exam-cancel" class="button button-quiet" type="button">Cancel</button><button class="button button-primary" type="submit">Save exam</button></div></form></dialog>
-  <dialog id="course-dialog" class="task-dialog"><form id="course-form" method="dialog"><h2 id="course-dialog-title">Add a course</h2><input id="course-id" type="hidden"><div class="field"><label for="course-name">Course name *</label><input id="course-name" required minlength="2" maxlength="100"></div><div class="form-grid"><div class="field"><label for="course-code">Course code</label><input id="course-code" maxlength="20"></div><div class="field"><label for="course-instructor">Instructor</label><input id="course-instructor" maxlength="100"></div><div class="field"><label for="course-semester">Semester</label><input id="course-semester" maxlength="40"></div><div class="field"><label for="course-color">Color</label><input id="course-color" type="color" value="#64748b"></div></div><div id="course-form-message" class="form-message" role="alert" hidden></div><div class="dialog-actions"><button id="course-cancel" class="button button-quiet" type="button">Cancel</button><button class="button button-primary" type="submit">Save course</button></div></form></dialog><div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="exam-dialog" class="dialog" aria-labelledby="exam-dialog-title">
+    <form id="exam-form" method="dialog">
+      <div class="dialog-heading"><div><h2 id="exam-dialog-title">Add an exam</h2><p>Save the time, place and course so nothing slips past.</p></div><button id="exam-close" class="icon-button" type="button" aria-label="Close dialog"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+      <input id="exam-id" type="hidden">
+      <div class="field"><label for="exam-title">Exam name <span class="required-star" aria-hidden="true">*</span></label><input id="exam-title" required minlength="2" maxlength="120" placeholder="e.g. Biology midterm"></div>
+      <div class="field"><label for="exam-description">Topics or notes</label><textarea id="exam-description" rows="3" maxlength="2000"></textarea></div>
+      <div class="form-grid">
+        <div class="field"><label for="exam-date">Date and time <span class="required-star" aria-hidden="true">*</span></label><input id="exam-date" type="datetime-local" required></div>
+        <div class="field"><label for="exam-duration">Duration (minutes)</label><input id="exam-duration" type="number" min="15" max="600" value="120" required></div>
+        <div class="field"><label for="exam-course">Course</label><select id="exam-course"><option value="">No course</option></select></div>
+        <div class="field"><label for="exam-location">Location</label><input id="exam-location" maxlength="120" placeholder="Building or room"></div>
+      </div>
+      <div id="exam-form-message" class="form-message" role="alert" hidden></div>
+      <div class="dialog-actions"><button id="exam-cancel" class="button button-quiet" type="button">Cancel</button><button class="button button-primary" type="submit">Save exam</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="course-dialog" class="dialog" aria-labelledby="course-dialog-title">
+    <form id="course-form" method="dialog">
+      <div class="dialog-heading"><div><h2 id="course-dialog-title">Add a course</h2><p>Group tasks, exams and study time by subject.</p></div></div>
+      <input id="course-id" type="hidden">
+      <div class="field"><label for="course-name">Course name <span class="required-star" aria-hidden="true">*</span></label><input id="course-name" required minlength="2" maxlength="100"></div>
+      <div class="form-grid">
+        <div class="field"><label for="course-code">Course code</label><input id="course-code" maxlength="20"></div>
+        <div class="field"><label for="course-instructor">Instructor</label><input id="course-instructor" maxlength="100"></div>
+        <div class="field"><label for="course-semester">Semester</label><input id="course-semester" maxlength="40"></div>
+        <div class="field"><label for="course-color">Colour</label><input id="course-color" type="color" value="#64748b"></div>
+      </div>
+      <div id="course-form-message" class="form-message" role="alert" hidden></div>
+      <div class="dialog-actions"><button id="course-cancel" class="button button-quiet" type="button">Cancel</button><button class="button button-primary" type="submit">Save course</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="plan-block-dialog" class="dialog" aria-labelledby="plan-block-title">
+    <form id="plan-block-form" method="dialog">
+      <div class="dialog-heading"><div><h2 id="plan-block-title">Plan a study block</h2><p>Reserve a time for focused work in your week.</p></div><button id="plan-block-close" class="icon-button close-button" type="button" aria-label="Close dialog"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+      <input id="plan-block-id" type="hidden">
+      <div class="field"><label for="plan-block-name">Study session <span class="required-star" aria-hidden="true">*</span></label><input id="plan-block-name" required minlength="2" maxlength="120" placeholder="e.g. Review lecture 5"></div>
+      <div class="form-grid"><div class="field"><label for="plan-block-date">Date and time</label><input id="plan-block-date" type="datetime-local" required></div><div class="field"><label for="plan-block-duration">Duration (minutes)</label><input id="plan-block-duration" type="number" min="15" max="480" step="15" value="60" required></div><div class="field"><label for="plan-block-course">Course</label><select id="plan-block-course"><option value="">No course</option></select></div><div class="field"><label for="plan-block-task">Task</label><select id="plan-block-task"><option value="">No task</option></select></div></div>
+      <div id="plan-block-message" class="form-message" role="alert" hidden></div>
+      <div class="dialog-actions"><button id="plan-block-cancel" class="button button-quiet" type="button">Cancel</button><button class="button button-primary" type="submit">Save study block</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="confirm-dialog" class="dialog dialog-small" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+    <form method="dialog" id="confirm-form">
+      <div class="dialog-heading"><div><h2 id="confirm-title">Are you sure?</h2><p id="confirm-message"></p></div></div>
+      <div class="dialog-actions"><button id="confirm-cancel" class="button button-quiet" type="button">Cancel</button><button id="confirm-ok" class="button button-danger" type="submit" value="ok">Delete</button></div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
-
