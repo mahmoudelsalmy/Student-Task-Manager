@@ -97,6 +97,79 @@ public sealed class ApiIntegrationTests : IClassFixture<TaskMateApiFactory>
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
+    [Fact]
+    public async Task Tasks_AreCreatedAndVisibleOnlyToTheirOwner()
+    {
+        var ownerClient = _client;
+        var ownerEmail = $"owner-{Guid.NewGuid():N}@example.com";
+        var ownerToken = await RegisterAndGetToken(ownerClient, ownerEmail);
+        ownerClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ownerToken);
+
+        var create = await ownerClient.PostAsJsonAsync("/api/tasks", new
+        {
+            title = "Integration test assignment",
+            description = "Verify owner isolation",
+            dueDate = "2026-12-01",
+            priority = "High",
+            status = "ToDo",
+            category = "Assignment"
+        });
+
+        Assert.Equal(HttpStatusCode.Created, create.StatusCode);
+        using var createdBody = JsonDocument.Parse(await create.Content.ReadAsStringAsync());
+        var taskId = createdBody.RootElement.GetProperty("id").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(taskId));
+
+        var ownerRead = await ownerClient.GetAsync($"/api/tasks/{taskId}");
+        Assert.Equal(HttpStatusCode.OK, ownerRead.StatusCode);
+
+        using var otherClient = new HttpClient { BaseAddress = new Uri(_client.BaseAddress!.ToString()) };
+        var otherToken = await RegisterAndGetToken(otherClient, $"other-{Guid.NewGuid():N}@example.com");
+        otherClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", otherToken);
+
+        var otherRead = await otherClient.GetAsync($"/api/tasks/{taskId}");
+        Assert.Equal(HttpStatusCode.NotFound, otherRead.StatusCode);
+
+        var otherUpdate = await otherClient.PutAsJsonAsync($"/api/tasks/{taskId}", new
+        {
+            title = "Attempted takeover",
+            description = (string?)null,
+            dueDate = (string?)null,
+            priority = "Low",
+            status = "Completed",
+            category = "Personal"
+        });
+        Assert.Equal(HttpStatusCode.NotFound, otherUpdate.StatusCode);
+
+        var ownerDelete = await ownerClient.DeleteAsync($"/api/tasks/{taskId}");
+        Assert.Equal(HttpStatusCode.NoContent, ownerDelete.StatusCode);
+    }
+
+    [Fact]
+    public async Task Dashboard_RejectsDatesOutsideExpectedFormat()
+    {
+        var token = await RegisterAndGetToken(_client, $"dashboard-{Guid.NewGuid():N}@example.com");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await _client.GetAsync("/api/dashboard?today=12-01-2026");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    private static async Task<string> RegisterAndGetToken(HttpClient client, string email)
+    {
+        var response = await client.PostAsJsonAsync("/api/auth/register", new
+        {
+            name = "Integration Test User",
+            email,
+            password = "Strong-password-123"
+        });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return body.RootElement.GetProperty("accessToken").GetString()
+            ?? throw new InvalidOperationException("Registration did not return an access token.");
+    }
+
 }
 
 public sealed class TaskMateApiFactory : WebApplicationFactory<Program>
