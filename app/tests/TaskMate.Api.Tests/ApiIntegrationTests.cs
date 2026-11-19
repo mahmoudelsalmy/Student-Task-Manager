@@ -12,11 +12,9 @@ namespace TaskMate.Api.Tests;
 public sealed class ApiIntegrationTests : IClassFixture<TaskMateApiFactory>
 {
     private readonly HttpClient _client;
-    private readonly TaskMateApiFactory _factory;
 
     public ApiIntegrationTests(TaskMateApiFactory factory)
     {
-        _factory = factory;
         _client = factory.CreateClient();
     }
 
@@ -125,7 +123,7 @@ public sealed class ApiIntegrationTests : IClassFixture<TaskMateApiFactory>
         var ownerRead = await ownerClient.GetAsync($"/api/tasks/{taskId}");
         Assert.Equal(HttpStatusCode.OK, ownerRead.StatusCode);
 
-        using var otherClient = _factory.CreateClient();
+        using var otherClient = new HttpClient { BaseAddress = new Uri(_client.BaseAddress!.ToString()) };
         var otherToken = await RegisterAndGetToken(otherClient, $"other-{Guid.NewGuid():N}@example.com");
         otherClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", otherToken);
 
