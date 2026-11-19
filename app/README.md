@@ -131,6 +131,8 @@ Task create and update bodies accept an optional nullable `courseId`. The API on
 
 A study-session request contains `startedAtUtc`, `endedAtUtc`, optional `courseId`, optional `taskId`, and optional `notes`. Sessions must be between 1 and 240 minutes, cannot be in the future, and referenced courses/tasks must belong to the signed-in user. Store and send timestamps as UTC instants.
 
+Study-plan blocks are scheduled intentions, not completed sessions. Creating or editing a block never increases study-time summaries; only a validated completed focus session does.
+
 ```json
 { "items": [], "page": 1, "pageSize": 20, "totalCount": 0, "totalPages": 0 }
 ```
