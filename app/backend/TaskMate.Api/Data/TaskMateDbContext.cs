@@ -51,6 +51,11 @@ public sealed class TaskMateDbContext(DbContextOptions<TaskMateDbContext> option
             entity.Property(task => task.Category).HasConversion<string>().HasMaxLength(16);
             entity.HasIndex(task => new { task.UserId, task.DueDate });
             entity.HasIndex(task => new { task.UserId, task.Status });
+            entity.HasIndex(task => task.CourseId);
+            entity.HasOne(task => task.Course)
+                .WithMany()
+                .HasForeignKey(task => task.CourseId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

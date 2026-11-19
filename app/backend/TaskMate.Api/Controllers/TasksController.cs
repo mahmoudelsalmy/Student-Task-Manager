@@ -9,7 +9,7 @@ namespace TaskMate.Api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/tasks")]
-public sealed class TasksController(ITaskService taskService) : ControllerBase
+public sealed class TasksController(ITaskService taskService, TaskMate.Api.Repositories.ITaskRepository taskRepository) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType<PagedResult<TaskResponse>>(StatusCodes.Status200OK)]
@@ -71,6 +71,8 @@ public sealed class TasksController(ITaskService taskService) : ControllerBase
         {
             return Unauthorized();
         }
+        if (request.CourseId is { } courseId && !await taskRepository.CourseBelongsToUserAsync(userId.Value, courseId, cancellationToken))
+            return BadRequest(new ProblemDetails { Title = "Invalid course.", Detail = "The selected course does not belong to your account.", Status = StatusCodes.Status400BadRequest });
         var task = await taskService.CreateTaskAsync(userId.Value, request, cancellationToken);
         return CreatedAtAction(nameof(GetTask), new { taskId = task.Id }, task);
     }
@@ -85,6 +87,8 @@ public sealed class TasksController(ITaskService taskService) : ControllerBase
         {
             return Unauthorized();
         }
+        if (request.CourseId is { } courseId && !await taskRepository.CourseBelongsToUserAsync(userId.Value, courseId, cancellationToken))
+            return BadRequest(new ProblemDetails { Title = "Invalid course.", Detail = "The selected course does not belong to your account.", Status = StatusCodes.Status400BadRequest });
         var task = await taskService.UpdateTaskAsync(userId.Value, taskId, request, cancellationToken);
         return task is null ? NotFound() : Ok(task);
     }

@@ -338,6 +338,7 @@
       priority: $("#task-priority").value,
       status: $("#task-status").value,
       category: $("#task-category").value,
+      courseId: $("#task-course").value || null,
     };
     const saveButton = $("#task-save");
     saveButton.disabled = true;
@@ -368,6 +369,7 @@
     $("#task-description").value = task?.description || "";
     $("#task-due").value = task?.dueDate || "";
     $("#task-category").value = task?.category || "Assignment";
+    $("#task-course").value = task?.courseId || "";
     $("#task-priority").value = task?.priority || "Medium";
     $("#task-status").value = task?.status || "ToDo";
     setMessage($("#task-form-message"));
@@ -383,6 +385,7 @@
       priority: task.priority,
       status: changes.status || task.status,
       category: task.category,
+      courseId: task.courseId || null,
     };
     try {
       await api(`/api/tasks/${task.id}`, { method: "PUT", body: JSON.stringify(payload) });
@@ -406,10 +409,11 @@
 
 
 function courseCard(c){const el=document.createElement("article");el.className="course-card";el.style.setProperty("--course-color",c.color||"#64748b");const name=document.createElement("h3");name.textContent=c.name;const meta=document.createElement("p");meta.textContent=[c.code,c.instructor,c.semester].filter(Boolean).join(" · ");const edit=document.createElement("button");edit.type="button";edit.className="button button-outline button-small";edit.textContent="Edit";edit.addEventListener("click",()=>courseDialog(c));const del=document.createElement("button");del.type="button";del.className="button button-quiet button-small";del.textContent="Delete";del.addEventListener("click",()=>deleteCourse(c));el.append(name,meta,edit,del);return el;}
-async function loadCourses(){try{state.courses=await api("/api/courses");$("#course-count").textContent=state.courses.length;$("#nav-courses").textContent=state.courses.length;$("#course-list").replaceChildren(...state.courses.map(courseCard));$("#course-empty").classList.toggle("hidden",state.courses.length>0);}catch(e){showToast(e.message,true);}}
+function updateCourseOptions(){const select=$("#task-course");const selected=select.value;select.replaceChildren(new Option("No course", ""),...state.courses.map(c=>new Option(c.code?`${c.name} (${c.code})`:c.name,c.id)));select.value=state.courses.some(c=>c.id===selected)?selected:"";}
+async function loadCourses(){try{state.courses=await api("/api/courses");updateCourseOptions();$("#course-count").textContent=state.courses.length;$("#nav-courses").textContent=state.courses.length;$("#course-list").replaceChildren(...state.courses.map(courseCard));$("#course-empty").classList.toggle("hidden",state.courses.length>0);}catch(e){showToast(e.message,true);}}
 function courseDialog(c=null){$("#course-form").reset();$("#course-id").value=c?.id||"";$("#course-dialog-title").textContent=c?"Edit course":"Add a course";$("#course-name").value=c?.name||"";$("#course-code").value=c?.code||"";$("#course-instructor").value=c?.instructor||"";$("#course-semester").value=c?.semester||"";$("#course-color").value=c?.color||"#64748b";setMessage($("#course-form-message"));$("#course-dialog").showModal();}
 async function saveCourse(e){e.preventDefault();const id=$("#course-id").value;const body={name:$("#course-name").value.trim(),code:$("#course-code").value.trim()||null,instructor:$("#course-instructor").value.trim()||null,semester:$("#course-semester").value.trim()||null,color:$("#course-color").value};try{await api(id?`/api/courses/${id}`:"/api/courses",{method:id?"PUT":"POST",body:JSON.stringify(body)});$("#course-dialog").close();await loadCourses();showToast("Course saved.");}catch(err){setMessage($("#course-form-message"),err.message);}}
-async function deleteCourse(c){if(!confirm(`Delete “${c.name}”?`))return;try{await api(`/api/courses/${c.id}`,{method:"DELETE"});await loadCourses();showToast("Course deleted.");}catch(e){showToast(e.message,true);}}
+async function deleteCourse(c){if(!confirm(`Delete “${c.name}”?`))return;try{await api(`/api/courses/${c.id}`,{method:"DELETE"});await Promise.all([loadCourses(),loadTasks()]);showToast("Course deleted. Linked tasks are now uncategorized.");}catch(e){showToast(e.message,true);}}
 function showCourses(){state.view="courses";$(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.view==="courses"));$("#breadcrumb-current").textContent="My courses";$(".stats-grid").classList.add("hidden");$(".welcome-row").classList.add("hidden");$(".tasks-panel").classList.add("hidden");$("#courses-panel").classList.remove("hidden");loadCourses();closeSidebar();}
   function setView(view) {
     state.view = view;

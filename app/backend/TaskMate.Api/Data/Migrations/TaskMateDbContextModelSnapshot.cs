@@ -72,6 +72,9 @@ namespace TaskMate.Api.Data.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("CourseId")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("TEXT");
 
@@ -108,6 +111,8 @@ namespace TaskMate.Api.Data.Migrations
                     b.HasIndex("UserId", "DueDate");
 
                     b.HasIndex("UserId", "Status");
+
+                    b.HasIndex("CourseId");
 
                     b.ToTable("Tasks");
                 });
@@ -160,6 +165,11 @@ namespace TaskMate.Api.Data.Migrations
 
             modelBuilder.Entity("TaskMate.Api.Domain.TaskItem", b =>
                 {
+                    b.HasOne("TaskMate.Api.Domain.Course", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("TaskMate.Api.Domain.User", "User")
                         .WithMany("Tasks")
                         .HasForeignKey("UserId")
@@ -167,6 +177,7 @@ namespace TaskMate.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                    b.Navigation("Course");
                 });
 
             modelBuilder.Entity("TaskMate.Api.Domain.User", b =>

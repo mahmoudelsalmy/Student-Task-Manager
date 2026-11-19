@@ -32,6 +32,7 @@ public sealed class TaskService(ITaskRepository tasks, TimeProvider timeProvider
             Priority = request.Priority,
             Status = request.Status,
             Category = request.Category,
+            CourseId = request.CourseId,
             CreatedAtUtc = now,
             UpdatedAtUtc = now
         };
@@ -53,6 +54,7 @@ public sealed class TaskService(ITaskRepository tasks, TimeProvider timeProvider
         task.Priority = request.Priority;
         task.Status = request.Status;
         task.Category = request.Category;
+        task.CourseId = request.CourseId;
         task.UpdatedAtUtc = timeProvider.GetUtcNow().UtcDateTime;
         await tasks.SaveChangesAsync(cancellationToken);
         return ToResponse(task);
@@ -83,6 +85,7 @@ public sealed class TaskService(ITaskRepository tasks, TimeProvider timeProvider
         task.Priority,
         task.Status,
         task.Category,
+        task.CourseId,
         task.CreatedAtUtc,
         task.UpdatedAtUtc);
 }

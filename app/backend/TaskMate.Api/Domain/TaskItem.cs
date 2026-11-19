@@ -5,6 +5,8 @@ public sealed class TaskItem
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid UserId { get; set; }
     public User? User { get; set; }
+    public Guid? CourseId { get; set; }
+    public Course? Course { get; set; }
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public DateOnly? DueDate { get; set; }

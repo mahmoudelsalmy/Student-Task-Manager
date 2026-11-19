@@ -223,6 +223,47 @@ public sealed class ApiIntegrationTests : IClassFixture<TaskMateApiFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Tasks_CanLinkToOwnedCourse_RejectForeignCourse_AndClearLinkOnCourseDelete()
+    {
+        using var ownerClient = _factory.CreateClient();
+        var ownerToken = await RegisterAndGetToken(ownerClient, $"task-course-owner-{Guid.NewGuid():N}@example.com");
+        ownerClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ownerToken);
+        var courseResponse = await ownerClient.PostAsJsonAsync("/api/courses", new { name = "Linear Algebra" });
+        Assert.Equal(HttpStatusCode.Created, courseResponse.StatusCode);
+        using var courseBody = JsonDocument.Parse(await courseResponse.Content.ReadAsStringAsync());
+        var courseId = courseBody.RootElement.GetProperty("id").GetGuid();
+
+        var create = await ownerClient.PostAsJsonAsync("/api/tasks", new
+        {
+            title = "Read matrix notes",
+            category = "Assignment",
+            courseId
+        });
+        Assert.Equal(HttpStatusCode.Created, create.StatusCode);
+        using var taskBody = JsonDocument.Parse(await create.Content.ReadAsStringAsync());
+        var taskId = taskBody.RootElement.GetProperty("id").GetGuid();
+        Assert.Equal(courseId, taskBody.RootElement.GetProperty("courseId").GetGuid());
+
+        using var otherClient = _factory.CreateClient();
+        var otherToken = await RegisterAndGetToken(otherClient, $"task-course-other-{Guid.NewGuid():N}@example.com");
+        otherClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", otherToken);
+        var invalidCreate = await otherClient.PostAsJsonAsync("/api/tasks", new { title = "Foreign course", courseId });
+        Assert.Equal(HttpStatusCode.BadRequest, invalidCreate.StatusCode);
+        var invalidUpdate = await ownerClient.PutAsJsonAsync($"/api/tasks/{taskId}", new
+        {
+            title = "Read matrix notes", description = (string?)null, dueDate = (string?)null,
+            priority = "Medium", status = "ToDo", category = "Assignment", courseId = Guid.NewGuid()
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, invalidUpdate.StatusCode);
+
+        var deleteCourse = await ownerClient.DeleteAsync($"/api/courses/{courseId}");
+        Assert.Equal(HttpStatusCode.NoContent, deleteCourse.StatusCode);
+        var readTask = await ownerClient.GetAsync($"/api/tasks/{taskId}");
+        using var updatedTask = JsonDocument.Parse(await readTask.Content.ReadAsStringAsync());
+        Assert.Equal(JsonValueKind.Null, updatedTask.RootElement.GetProperty("courseId").ValueKind);
+    }
+
 }
 
 public sealed class TaskMateApiFactory : WebApplicationFactory<Program>

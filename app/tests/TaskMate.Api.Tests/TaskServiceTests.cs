@@ -99,6 +99,9 @@ public sealed class TaskServiceTests
         public Task<TaskItem?> FindByIdAsync(Guid userId, Guid taskId, CancellationToken cancellationToken) =>
             Task.FromResult(Items.SingleOrDefault(item => item.Id == taskId && item.UserId == userId));
 
+        public Task<bool> CourseBelongsToUserAsync(Guid userId, Guid courseId, CancellationToken cancellationToken) =>
+            Task.FromResult(false);
+
         public Task AddAsync(TaskItem task, CancellationToken cancellationToken)
         {
             Items.Add(task);

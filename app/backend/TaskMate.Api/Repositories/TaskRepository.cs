@@ -60,6 +60,9 @@ public sealed class TaskRepository(TaskMateDbContext dbContext) : ITaskRepositor
     public Task<TaskItem?> FindByIdAsync(Guid userId, Guid taskId, CancellationToken cancellationToken) =>
         dbContext.Tasks.SingleOrDefaultAsync(task => task.Id == taskId && task.UserId == userId, cancellationToken);
 
+    public Task<bool> CourseBelongsToUserAsync(Guid userId, Guid courseId, CancellationToken cancellationToken) =>
+        dbContext.Courses.AnyAsync(course => course.Id == courseId && course.UserId == userId, cancellationToken);
+
     public async Task AddAsync(TaskItem task, CancellationToken cancellationToken)
     {
         dbContext.Tasks.Add(task);
