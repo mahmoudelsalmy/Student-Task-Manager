@@ -15,6 +15,6 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="../TaskMate.Api/TaskMate.Api.csproj" />
+    <ProjectReference Include="../../backend/TaskMate.Api/TaskMate.Api.csproj" />
   </ItemGroup>
 </Project>
