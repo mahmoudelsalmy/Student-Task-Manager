@@ -1,0 +1,34 @@
+name: TaskMate CI
+
+on:
+  push:
+    branches: [main, "docs/taskmate-v2-development-plan"]
+    paths:
+      - "app/**"
+      - ".github/workflows/taskmate-ci.yml"
+  pull_request:
+    paths:
+      - "app/**"
+      - ".github/workflows/taskmate-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore app/backend/TaskMate.Api/TaskMate.Api.csproj
+
+      - name: Build
+        run: dotnet build app/backend/TaskMate.Api/TaskMate.Api.csproj --configuration Release --no-restore
