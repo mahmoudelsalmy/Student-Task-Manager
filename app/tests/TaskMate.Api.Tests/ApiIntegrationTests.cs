@@ -248,12 +248,26 @@ public sealed class ApiIntegrationTests : IClassFixture<TaskMateApiFactory>
         using var otherClient = _factory.CreateClient();
         var otherToken = await RegisterAndGetToken(otherClient, $"task-course-other-{Guid.NewGuid():N}@example.com");
         otherClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", otherToken);
+        var otherCourseResponse = await otherClient.PostAsJsonAsync("/api/courses", new { name = "Other user's course" });
+        Assert.Equal(HttpStatusCode.Created, otherCourseResponse.StatusCode);
+        using var otherCourseBody = JsonDocument.Parse(await otherCourseResponse.Content.ReadAsStringAsync());
+        var otherCourseId = otherCourseBody.RootElement.GetProperty("id").GetGuid();
         var invalidCreate = await otherClient.PostAsJsonAsync("/api/tasks", new { title = "Foreign course", courseId });
         Assert.Equal(HttpStatusCode.BadRequest, invalidCreate.StatusCode);
+
+        var validUpdate = await ownerClient.PutAsJsonAsync($"/api/tasks/{taskId}", new
+        {
+            title = "Read matrix notes, section two", description = (string?)null, dueDate = (string?)null,
+            priority = "Medium", status = "ToDo", category = "Assignment", courseId
+        });
+        Assert.Equal(HttpStatusCode.OK, validUpdate.StatusCode);
+        using var updatedBody = JsonDocument.Parse(await validUpdate.Content.ReadAsStringAsync());
+        Assert.Equal(courseId, updatedBody.RootElement.GetProperty("courseId").GetGuid());
+
         var invalidUpdate = await ownerClient.PutAsJsonAsync($"/api/tasks/{taskId}", new
         {
             title = "Read matrix notes", description = (string?)null, dueDate = (string?)null,
-            priority = "Medium", status = "ToDo", category = "Assignment", courseId = Guid.NewGuid()
+            priority = "Medium", status = "ToDo", category = "Assignment", courseId = otherCourseId
         });
         Assert.Equal(HttpStatusCode.BadRequest, invalidUpdate.StatusCode);
 

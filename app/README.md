@@ -107,6 +107,8 @@ All JSON properties use camel case. Task statuses are `ToDo`, `InProgress`, and 
 
 `GET /api/tasks` accepts `status`, `category`, `priority`, `search`, `dueFrom`, `dueThrough`, `excludeCompleted`, `page`, and `pageSize`. Page size is limited to 100. A response has this shape:
 
+Task create and update bodies accept an optional nullable `courseId`. The API only accepts a course owned by the signed-in user; omitting or sending `null` leaves a task unassigned. Deleting a course unlinks its tasks and preserves them.
+
 ```json
 { "items": [], "page": 1, "pageSize": 20, "totalCount": 0, "totalPages": 0 }
 ```
