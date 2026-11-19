@@ -12,6 +12,10 @@ on:
       - ".github/workflows/taskmate-ci.yml"
   workflow_dispatch:
 
+concurrency:
+  group: taskmate-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

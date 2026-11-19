@@ -54,6 +54,16 @@ dotnet run --no-launch-profile --project backend/TaskMate.Api/TaskMate.Api.cspro
 
 Set `ConnectionStrings__DefaultConnection` to change the SQLite location. Relative paths resolve from the API content directory. Keep the database on durable storage and back it up before upgrades. SQLite here is intended for local use or a single app instance. Use a server database and its EF provider for horizontally scaled deployments.
 
+## Run tests
+
+From the `app` directory:
+
+```powershell
+dotnet test TaskMate.slnx --configuration Release
+```
+
+The xUnit suite currently covers password hashing and verification, malformed password hashes, task text normalization, timestamps, and per-user task ownership checks. GitHub Actions runs restore, build, and tests for changes under `app/`.
+
 ## Database migrations
 
 The app runs EF Core `Database.Migrate()` on startup. The initial migration is in `backend/TaskMate.Api/Data/Migrations/`. To manage migrations manually, install EF CLI and run from the repository root:
