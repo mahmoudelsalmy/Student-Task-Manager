@@ -11,8 +11,7 @@
     page: 1,
     pageSize: 20,
     totalPages: 0,
-    totalCount: 0,
-    searchTimer: null,
+    totalCount: 0, courses: [], searchTimer: null,
     loadId: 0,
     toastTimer: null,
   };
@@ -405,6 +404,13 @@
     }
   }
 
+
+function courseCard(c){const el=document.createElement("article");el.className="course-card";el.style.setProperty("--course-color",c.color||"#64748b");const name=document.createElement("h3");name.textContent=c.name;const meta=document.createElement("p");meta.textContent=[c.code,c.instructor,c.semester].filter(Boolean).join(" · ");const edit=document.createElement("button");edit.type="button";edit.className="button button-outline button-small";edit.textContent="Edit";edit.addEventListener("click",()=>courseDialog(c));const del=document.createElement("button");del.type="button";del.className="button button-quiet button-small";del.textContent="Delete";del.addEventListener("click",()=>deleteCourse(c));el.append(name,meta,edit,del);return el;}
+async function loadCourses(){try{state.courses=await api("/api/courses");$("#course-count").textContent=state.courses.length;$("#nav-courses").textContent=state.courses.length;$("#course-list").replaceChildren(...state.courses.map(courseCard));$("#course-empty").classList.toggle("hidden",state.courses.length>0);}catch(e){showToast(e.message,true);}}
+function courseDialog(c=null){$("#course-form").reset();$("#course-id").value=c?.id||"";$("#course-dialog-title").textContent=c?"Edit course":"Add a course";$("#course-name").value=c?.name||"";$("#course-code").value=c?.code||"";$("#course-instructor").value=c?.instructor||"";$("#course-semester").value=c?.semester||"";$("#course-color").value=c?.color||"#64748b";setMessage($("#course-form-message"));$("#course-dialog").showModal();}
+async function saveCourse(e){e.preventDefault();const id=$("#course-id").value;const body={name:$("#course-name").value.trim(),code:$("#course-code").value.trim()||null,instructor:$("#course-instructor").value.trim()||null,semester:$("#course-semester").value.trim()||null,color:$("#course-color").value};try{await api(id?`/api/courses/${id}`:"/api/courses",{method:id?"PUT":"POST",body:JSON.stringify(body)});$("#course-dialog").close();await loadCourses();showToast("Course saved.");}catch(err){setMessage($("#course-form-message"),err.message);}}
+async function deleteCourse(c){if(!confirm(`Delete “${c.name}”?`))return;try{await api(`/api/courses/${c.id}`,{method:"DELETE"});await loadCourses();showToast("Course deleted.");}catch(e){showToast(e.message,true);}}
+function showCourses(){state.view="courses";$(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.view==="courses"));$("#breadcrumb-current").textContent="My courses";$(".stats-grid").classList.add("hidden");$(".welcome-row").classList.add("hidden");$(".tasks-panel").classList.add("hidden");$("#courses-panel").classList.remove("hidden");loadCourses();closeSidebar();}
   function setView(view) {
     state.view = view;
     state.page = 1;
@@ -414,7 +420,7 @@
     $$(".nav-link").forEach(button => button.classList.toggle("active", button.dataset.view === view));
     const heading = view === "upcoming" ? "Upcoming" : view === "completed" ? "Completed" : "All tasks";
     $("#breadcrumb-current").textContent = heading;
-    $("#tasks-heading").firstChild.textContent = `${heading} `;
+    $("#tasks-heading").firstChild.textContent = `${heading} `;$(".stats-grid").classList.remove("hidden");$(".welcome-row").classList.remove("hidden");$(".tasks-panel").classList.remove("hidden");$("#courses-panel").classList.add("hidden");
     loadTasks();
     closeSidebar();
   }
@@ -465,7 +471,8 @@
       if (event.target === $("#task-dialog")) $("#task-dialog").close();
     });
 
-    $$(".nav-link").forEach(button => button.addEventListener("click", () => setView(button.dataset.view)));
+    $(".nav-link").forEach(button => button.addEventListener("click", () => button.dataset.view==="courses"?showCourses():setView(button.dataset.view)));
+$("#add-course").addEventListener("click",()=>courseDialog());$("#course-empty-add").addEventListener("click",()=>courseDialog());$("#course-form").addEventListener("submit",saveCourse);$("#course-cancel").addEventListener("click",()=>$("#course-dialog").close());
     ["#status-filter", "#category-filter", "#priority-filter"].forEach(selector => {
       $(selector).addEventListener("change", () => {
         state.view = "all";
@@ -523,7 +530,7 @@
       $("#profile-email").textContent = state.user.email;
       $("#avatar").textContent = [...state.user.name.trim()][0]?.toUpperCase() || "S";
       setWelcome();
-      await Promise.all([refreshDashboard(), loadTasks()]);
+      await Promise.all([refreshDashboard(), loadTasks(), loadCourses()]);
     } catch (error) {
       if (state.token) {
         signOut(false);

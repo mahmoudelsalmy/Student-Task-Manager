@@ -317,3 +317,5 @@ a { color: inherit; text-decoration: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+.course-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-top:20px}.course-card{border:1px solid #e8eaf0;border-top:5px solid var(--course-color);border-radius:16px;padding:20px;background:#fff}.course-card h3{margin:0 0 8px}.course-card p{color:#778094;font-size:12px;min-height:20px}.course-actions{display:flex;gap:8px}

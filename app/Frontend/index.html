@@ -86,7 +86,7 @@
         <button class="nav-link" type="button" data-view="completed">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="m8.5 12 2.3 2.3 4.8-5"></path></svg>
           <span>Completed</span>
-        </button>
+        </button><button class="nav-link" type="button" data-view="courses"><span>▦</span><span>My courses</span><span id="nav-courses" class="nav-count muted">0</span></button>
       </nav>
       <div class="sidebar-bottom">
         <div class="sidebar-tip">
@@ -138,7 +138,7 @@
           </article>
         </section>
 
-        <section class="tasks-panel" aria-labelledby="tasks-heading">
+        <section id="courses-panel" class="courses-panel hidden"><div class="panel-heading"><div><h2>My courses <span id="course-count" class="heading-count">0</span></h2><p>Keep your subjects, instructors, and course codes together.</p></div><button id="add-course" class="button button-primary button-small" type="button">+ Add course</button></div><div id="course-list" class="course-grid"></div><div id="course-empty" class="empty-state hidden"><h3>No courses yet.</h3><button id="course-empty-add" class="button button-primary button-small" type="button">Add your first course</button></div></section><section class="tasks-panel" aria-labelledby="tasks-heading">
           <div class="panel-heading">
             <div><div class="panel-title-row"><span class="section-kicker">YOUR LIST</span><span class="live-indicator"><span></span> Up to date</span></div><h2 id="tasks-heading">All tasks <span id="task-count" class="heading-count">0</span></h2></div>
             <button id="add-task-panel" class="button button-outline button-small" type="button"><span class="plus">+</span><span>Add task</span></button>
@@ -177,6 +177,6 @@
       <div class="dialog-actions"><button id="dialog-cancel" class="button button-quiet" type="button">Cancel</button><button id="task-save" class="button button-primary" type="submit">Save task <span aria-hidden="true">→</span></button></div>
     </form>
   </dialog>
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="course-dialog" class="task-dialog"><form id="course-form" method="dialog"><h2 id="course-dialog-title">Add a course</h2><input id="course-id" type="hidden"><div class="field"><label for="course-name">Course name *</label><input id="course-name" required minlength="2" maxlength="100"></div><div class="form-grid"><div class="field"><label for="course-code">Course code</label><input id="course-code" maxlength="20"></div><div class="field"><label for="course-instructor">Instructor</label><input id="course-instructor" maxlength="100"></div><div class="field"><label for="course-semester">Semester</label><input id="course-semester" maxlength="40"></div><div class="field"><label for="course-color">Color</label><input id="course-color" type="color" value="#64748b"></div></div><div id="course-form-message" class="form-message" role="alert" hidden></div><div class="dialog-actions"><button id="course-cancel" class="button button-quiet" type="button">Cancel</button><button class="button button-primary" type="submit">Save course</button></div></form></dialog><div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
