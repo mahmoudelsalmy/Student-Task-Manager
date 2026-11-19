@@ -417,6 +417,56 @@ public sealed class ApiIntegrationTests : IClassFixture<TaskMateApiFactory>
         Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/api/exams/{examId}")).StatusCode);
     }
 
+    [Fact]
+    public async Task StudyGoals_TrackWeeklyOwnerSessionProgressAndValidateCourseOwnership()
+    {
+        using var owner = _factory.CreateClient();
+        owner.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer", await RegisterAndGetToken(owner, $"goal-owner-{Guid.NewGuid():N}@example.com"));
+        var courseResponse = await owner.PostAsJsonAsync("/api/courses", new { name = "Physics" });
+        using var courseJson = JsonDocument.Parse(await courseResponse.Content.ReadAsStringAsync());
+        var courseId = courseJson.RootElement.GetProperty("id").GetGuid();
+        var end = DateTimeOffset.UtcNow.AddMinutes(-1);
+        await owner.PostAsJsonAsync("/api/study/sessions", new
+        {
+            startedAtUtc = end.AddMinutes(-15),
+            endedAtUtc = end,
+            actualFocusSeconds = 10 * 60,
+            courseId
+        });
+        var create = await owner.PostAsJsonAsync("/api/study/goals", new
+        {
+            title = "Physics review", targetMinutesPerWeek = 300, courseId
+        });
+        Assert.Equal(HttpStatusCode.Created, create.StatusCode);
+        using var created = JsonDocument.Parse(await create.Content.ReadAsStringAsync());
+        var goalId = created.RootElement.GetProperty("id").GetGuid();
+        var list = await owner.GetAsync("/api/study/goals");
+        using var goals = JsonDocument.Parse(await list.Content.ReadAsStringAsync());
+        Assert.Single(goals.RootElement.EnumerateArray());
+        Assert.Equal(10, goals.RootElement[0].GetProperty("minutesThisWeek").GetInt32());
+
+        using var other = _factory.CreateClient();
+        other.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer", await RegisterAndGetToken(other, $"goal-other-{Guid.NewGuid():N}@example.com"));
+        var hidden = await other.GetAsync("/api/study/goals");
+        using var otherGoals = JsonDocument.Parse(await hidden.Content.ReadAsStringAsync());
+        Assert.Empty(otherGoals.RootElement.EnumerateArray());
+        var foreign = await other.PostAsJsonAsync("/api/study/goals", new
+        {
+            title = "Foreign course", targetMinutesPerWeek = 90, courseId
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, foreign.StatusCode);
+
+        var update = await owner.PutAsJsonAsync($"/api/study/goals/{goalId}", new
+        {
+            title = "Physics deep work", targetMinutesPerWeek = 360, courseId = (Guid?)null
+        });
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await other.DeleteAsync($"/api/study/goals/{goalId}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/api/study/goals/{goalId}")).StatusCode);
+    }
+
 }
 
 public sealed class TaskMateApiFactory : WebApplicationFactory<Program>

@@ -78,6 +78,20 @@ namespace TaskMate.Api.Data.Migrations
                     b.ToTable("Exams");
                 });
 
+            modelBuilder.Entity("TaskMate.Api.Domain.StudyGoal", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("TEXT");
+                    b.Property<Guid?>("CourseId").HasColumnType("TEXT");
+                    b.Property<DateTime>("CreatedAtUtc").HasColumnType("TEXT");
+                    b.Property<int>("TargetMinutesPerWeek").HasColumnType("INTEGER");
+                    b.Property<string>("Title").IsRequired().HasMaxLength(100).HasColumnType("TEXT");
+                    b.Property<Guid>("UserId").HasColumnType("TEXT");
+                    b.HasKey("Id");
+                    b.HasIndex("CourseId");
+                    b.HasIndex("UserId");
+                    b.ToTable("StudyGoals");
+                });
+
             modelBuilder.Entity("TaskMate.Api.Domain.StudySession", b =>
                 {
                     b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("TEXT");
@@ -219,6 +233,12 @@ namespace TaskMate.Api.Data.Migrations
 
                     b.Navigation("User");
                     b.Navigation("Course");
+                });
+
+            modelBuilder.Entity("TaskMate.Api.Domain.StudyGoal", b =>
+                {
+                    b.HasOne("TaskMate.Api.Domain.Course", null).WithMany().HasForeignKey("CourseId").OnDelete(DeleteBehavior.SetNull);
+                    b.HasOne("TaskMate.Api.Domain.User", null).WithMany().HasForeignKey("UserId").OnDelete(DeleteBehavior.Cascade).IsRequired();
                 });
 
             modelBuilder.Entity("TaskMate.Api.Domain.StudySession", b =>

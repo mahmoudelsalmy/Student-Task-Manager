@@ -13,9 +13,9 @@ TaskMate is a student productivity web application for managing academic tasks, 
 - Dashboard task totals and overdue/upcoming counts.
 - Monthly calendar for task deadlines and scheduled exams, status board and seven-day due-date study planner.
 - Exam scheduling with course, date/time, duration, location and notes.
-- Persisted study sessions and an in-app Pomodoro timer with course/task links, session history and weekly/monthly summaries.
+- Persisted study sessions and an in-app Pomodoro timer with course/task links, session history, weekly/monthly summaries, and course-scoped weekly study goals.
 
-**Known gaps:** The planner still suggests work from task deadlines without saving study blocks. Study goals, notifications, advanced task features and analytics remain on the roadmap. See [the audit and roadmap](docs/AUDIT_AND_ROADMAP.md).
+**Known gaps:** The planner still suggests work from task deadlines without saving study blocks. Notifications, advanced task features and analytics remain on the roadmap. See [the audit and roadmap](docs/AUDIT_AND_ROADMAP.md).
 
 ## Technology
 

@@ -70,6 +70,20 @@ CREATE TABLE "Exams" (
     CONSTRAINT "FK_Exams_Courses_CourseId" FOREIGN KEY ("CourseId") REFERENCES "Courses" ("Id") ON DELETE SET NULL
 );
 
+CREATE TABLE "StudyGoals" (
+    "Id" TEXT NOT NULL CONSTRAINT "PK_StudyGoals" PRIMARY KEY,
+    "UserId" TEXT NOT NULL,
+    "CourseId" TEXT NULL,
+    "Title" TEXT NOT NULL,
+    "TargetMinutesPerWeek" INTEGER NOT NULL,
+    "CreatedAtUtc" TEXT NOT NULL,
+    CONSTRAINT "FK_StudyGoals_Users_UserId" FOREIGN KEY ("UserId") REFERENCES "Users" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_StudyGoals_Courses_CourseId" FOREIGN KEY ("CourseId") REFERENCES "Courses" ("Id") ON DELETE SET NULL
+);
+
+CREATE INDEX "IX_StudyGoals_UserId" ON "StudyGoals" ("UserId");
+CREATE INDEX "IX_StudyGoals_CourseId" ON "StudyGoals" ("CourseId");
+
 CREATE INDEX "IX_Exams_UserId_ScheduledAtUtc" ON "Exams" ("UserId", "ScheduledAtUtc");
 CREATE INDEX "IX_Exams_CourseId" ON "Exams" ("CourseId");
 
@@ -105,6 +119,9 @@ VALUES ('20261119190000_AddStudySessions', '10.0.13');
 
 INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
 VALUES ('20261119210000_AddExams', '10.0.13');
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20261119220000_AddStudyGoals', '10.0.13');
 
 COMMIT;
 

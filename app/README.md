@@ -11,7 +11,8 @@ It uses an ASP.NET Core 10 Web API, EF Core 10, SQLite, JWT bearer authenticatio
 - Course management with course name, code, instructor, semester, and display color.
 - Create, view, edit, complete, and delete tasks with due dates, priority, status, category, notes, and an optional course link.
 - Monthly deadline calendar, status-based Kanban board, and a seven-day study planner with suggested time based on upcoming exams and assignments.
-- Authenticated study-session creation, recent-session history, and total/weekly/monthly time summaries, with a Pomodoro focus timer in the browser UI. Goals and browser-level tests are not implemented yet.
+- Authenticated study-session creation, recent-session history, and total/weekly/monthly time summaries, with a Pomodoro focus timer and weekly goals in the browser UI. Browser-level tests are not implemented yet.
+- Weekly study goals with optional course scope and progress calculated from completed sessions.
 - User-owned exam scheduling with course, local-time entry, duration, location and notes; assignments continue to use task categories.
 - Dashboard totals for all tasks, completed tasks, deadlines due within seven days, overdue tasks, and completion percentage.
 - Server-side title search, status/category/priority filters, upcoming date filters, and pagination.
@@ -99,6 +100,10 @@ All JSON properties use camel case. Task statuses are `ToDo`, `InProgress`, and 
 | `GET` | `/api/study/sessions?limit=50` | Yes | List up to 100 most recent owned study sessions |
 | `POST` | `/api/study/sessions` | Yes | Record a completed study session with UTC start/end timestamps, actual focused seconds, and optional owned course/task IDs |
 | `GET` | `/api/study/summary` | Yes | Return all-time, week and month study-minute totals |
+| `GET` | `/api/study/goals` | Yes | List weekly goals with this-week session progress |
+| `POST` | `/api/study/goals` | Yes | Create a weekly goal, optionally scoped to an owned course |
+| `PUT` | `/api/study/goals/{id}` | Yes | Update an owned weekly goal |
+| `DELETE` | `/api/study/goals/{id}` | Yes | Delete an owned weekly goal |
 | `GET` | `/api/exams` | Yes | List the signed-in user's exams ordered by date |
 | `POST` | `/api/exams` | Yes | Schedule an exam and optionally link an owned course; timestamps use UTC |
 | `GET` | `/api/exams/{id}` | Yes | Read an owned exam |

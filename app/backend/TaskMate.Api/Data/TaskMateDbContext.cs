@@ -10,6 +10,7 @@ public sealed class TaskMateDbContext(DbContextOptions<TaskMateDbContext> option
     public DbSet<Course> Courses => Set<Course>();
     public DbSet<StudySession> StudySessions => Set<StudySession>();
     public DbSet<Exam> Exams => Set<Exam>();
+    public DbSet<StudyGoal> StudyGoals => Set<StudyGoal>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -63,6 +64,16 @@ public sealed class TaskMateDbContext(DbContextOptions<TaskMateDbContext> option
             entity.HasIndex(exam => exam.CourseId);
             entity.HasOne<User>().WithMany().HasForeignKey(exam => exam.UserId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne<Course>().WithMany().HasForeignKey(exam => exam.CourseId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<StudyGoal>(entity =>
+        {
+            entity.HasKey(goal => goal.Id);
+            entity.Property(goal => goal.Title).HasMaxLength(100).IsRequired();
+            entity.HasIndex(goal => goal.UserId);
+            entity.HasIndex(goal => goal.CourseId);
+            entity.HasOne<User>().WithMany().HasForeignKey(goal => goal.UserId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<Course>().WithMany().HasForeignKey(goal => goal.CourseId).OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<TaskItem>(entity =>
