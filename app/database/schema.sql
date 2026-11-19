@@ -81,6 +81,24 @@ CREATE TABLE "StudyGoals" (
     CONSTRAINT "FK_StudyGoals_Courses_CourseId" FOREIGN KEY ("CourseId") REFERENCES "Courses" ("Id") ON DELETE SET NULL
 );
 
+CREATE TABLE "StudyPlanBlocks" (
+    "Id" TEXT NOT NULL CONSTRAINT "PK_StudyPlanBlocks" PRIMARY KEY,
+    "UserId" TEXT NOT NULL,
+    "CourseId" TEXT NULL,
+    "TaskId" TEXT NULL,
+    "Title" TEXT NOT NULL,
+    "StartsAtUtc" TEXT NOT NULL,
+    "DurationMinutes" INTEGER NOT NULL,
+    "CreatedAtUtc" TEXT NOT NULL,
+    CONSTRAINT "FK_StudyPlanBlocks_Users_UserId" FOREIGN KEY ("UserId") REFERENCES "Users" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_StudyPlanBlocks_Courses_CourseId" FOREIGN KEY ("CourseId") REFERENCES "Courses" ("Id") ON DELETE SET NULL,
+    CONSTRAINT "FK_StudyPlanBlocks_Tasks_TaskId" FOREIGN KEY ("TaskId") REFERENCES "Tasks" ("Id") ON DELETE SET NULL
+);
+
+CREATE INDEX "IX_StudyPlanBlocks_UserId_StartsAtUtc" ON "StudyPlanBlocks" ("UserId", "StartsAtUtc");
+CREATE INDEX "IX_StudyPlanBlocks_CourseId" ON "StudyPlanBlocks" ("CourseId");
+CREATE INDEX "IX_StudyPlanBlocks_TaskId" ON "StudyPlanBlocks" ("TaskId");
+
 CREATE INDEX "IX_StudyGoals_UserId" ON "StudyGoals" ("UserId");
 CREATE INDEX "IX_StudyGoals_CourseId" ON "StudyGoals" ("CourseId");
 
@@ -123,5 +141,7 @@ VALUES ('20261119210000_AddExams', '10.0.13');
 INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
 VALUES ('20261119220000_AddStudyGoals', '10.0.13');
 
-COMMIT;
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20261119230000_AddStudyPlanBlocks', '10.0.13');
 
+COMMIT;
