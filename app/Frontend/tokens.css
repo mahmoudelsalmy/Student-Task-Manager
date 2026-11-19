@@ -1,0 +1,135 @@
+/* TaskMate design tokens.
+   Every colour, size and shadow used by styles.css comes from here, so a theme
+   is just a different set of values for the same names. Light and dark are
+   designed separately (not one derived from the other) and their text/background
+   pairs are checked for WCAG AA contrast. */
+
+:root {
+  /* Typography */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --fs-xs: 0.75rem;     /* 12px – smallest text allowed */
+  --fs-sm: 0.8125rem;   /* 13px */
+  --fs-base: 0.875rem;  /* 14px */
+  --fs-md: 0.9375rem;   /* 15px */
+  --fs-lg: 1.125rem;    /* 18px */
+  --fs-xl: 1.375rem;    /* 22px */
+  --fs-2xl: 1.75rem;    /* 28px */
+  --fs-display: clamp(2rem, 1.4rem + 2vw, 3rem);
+
+  /* Spacing (4px grid) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+
+  /* Shape */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 999px;
+
+  /* Layout */
+  --sidebar-w: 256px;
+  --topbar-h: 60px;
+  --content-max: 1240px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur: 140ms;
+
+  /* Course / event accents shared by both themes (used as small marks only) */
+  --accent-assignment: #d4871f;
+  --accent-exam: #d6486a;
+  --accent-project: #1f9d86;
+  --accent-personal: #a65bb4;
+}
+
+/* ---------- Light theme ---------- */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #f2f4f7;
+  --surface-3: #e8ebf0;
+  --border: #e2e5eb;
+  --border-strong: #c9ced8;
+
+  --text: #161b26;
+  --text-2: #424b5c;
+  --text-3: #5b6577;
+
+  --primary: #4553d4;
+  --primary-hover: #3946bd;
+  --primary-contrast: #ffffff;
+  --primary-soft: #eceefc;
+  --primary-text: #3340b0;
+  --focus-ring: rgb(69 83 212 / 35%);
+
+  --success: #1b7552;
+  --success-soft: #e3f4ec;
+  --warning: #9a5a0c;
+  --warning-soft: #fdf0dc;
+  --danger: #b3323c;
+  --danger-soft: #fdeaec;
+  --danger-solid: #b3323c;
+
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #e2e5eb;
+  --sidebar-active-bg: #eceefc;
+
+  --overlay: rgb(15 20 30 / 45%);
+  --shadow-sm: 0 1px 2px rgb(16 24 40 / 6%);
+  --shadow-md: 0 4px 14px rgb(16 24 40 / 8%);
+  --shadow-lg: 0 18px 50px rgb(16 24 40 / 20%);
+}
+
+/* ---------- Dark theme ---------- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0e1218;
+  --surface: #161b25;
+  --surface-2: #1c2230;
+  --surface-3: #262e3f;
+  --border: #283042;
+  --border-strong: #3a4459;
+
+  --text: #e9ecf2;
+  --text-2: #bcc4d4;
+  --text-3: #93a0b6;
+
+  --primary: #6b79f0;
+  --primary-hover: #7a87f5;
+  --primary-contrast: #0b0e18;
+  --primary-soft: #222a4d;
+  --primary-text: #aab3ff;
+  --focus-ring: rgb(139 151 255 / 45%);
+
+  --success: #4fcf9a;
+  --success-soft: #16342a;
+  --warning: #f0b25a;
+  --warning-soft: #3a2a12;
+  --danger: #ff8a93;
+  --danger-soft: #3d1a1f;
+  --danger-solid: #d8434f;
+
+  --sidebar-bg: #121722;
+  --sidebar-border: #283042;
+  --sidebar-active-bg: #222a4d;
+
+  --overlay: rgb(2 4 10 / 62%);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-md: 0 6px 18px rgb(0 0 0 / 38%);
+  --shadow-lg: 0 20px 60px rgb(0 0 0 / 60%);
+
+  --accent-assignment: #f0b25a;
+  --accent-exam: #ff7c9a;
+  --accent-project: #4fd1b8;
+  --accent-personal: #d28bde;
+}
