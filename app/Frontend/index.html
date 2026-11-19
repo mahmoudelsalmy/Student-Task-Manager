@@ -87,6 +87,9 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="m8.5 12 2.3 2.3 4.8-5"></path></svg>
           <span>Completed</span>
         </button><button class="nav-link" type="button" data-view="courses"><span>▦</span><span>My courses</span><span id="nav-courses" class="nav-count muted">0</span></button>
+        <button class="nav-link" type="button" data-view="calendar"><span>▦</span><span>Calendar</span></button>
+        <button class="nav-link" type="button" data-view="kanban"><span>▤</span><span>Kanban board</span></button>
+        <button class="nav-link" type="button" data-view="planner"><span>✳</span><span>Study planner</span></button>
       </nav>
       <div class="sidebar-bottom">
         <div class="sidebar-tip">
@@ -138,7 +141,9 @@
           </article>
         </section>
 
-        <section id="courses-panel" class="courses-panel hidden"><div class="panel-heading"><div><h2>My courses <span id="course-count" class="heading-count">0</span></h2><p>Keep your subjects, instructors, and course codes together.</p></div><button id="add-course" class="button button-primary button-small" type="button">+ Add course</button></div><div id="course-list" class="course-grid"></div><div id="course-empty" class="empty-state hidden"><h3>No courses yet.</h3><button id="course-empty-add" class="button button-primary button-small" type="button">Add your first course</button></div></section><section class="tasks-panel" aria-labelledby="tasks-heading">
+        <section id="courses-panel" class="courses-panel hidden"><div class="panel-heading"><div><h2>My courses <span id="course-count" class="heading-count">0</span></h2><p>Keep your subjects, instructors, and course codes together.</p></div><button id="add-course" class="button button-primary button-small" type="button">+ Add course</button></div><div id="course-list" class="course-grid"></div><div id="course-empty" class="empty-state hidden"><h3>No courses yet.</h3><button id="course-empty-add" class="button button-primary button-small" type="button">Add your first course</button></div></section>
+        <section id="planning-panel" class="planning-panel hidden" aria-live="polite"><div class="panel-heading"><div><span class="section-kicker" id="planning-kicker">PLAN AHEAD</span><h2 id="planning-heading">Calendar</h2><p id="planning-description">See your deadlines in one place.</p></div><div class="planning-controls"><button id="planning-prev" class="page-button" type="button" aria-label="Previous period">←</button><span id="planning-period"></span><button id="planning-next" class="page-button" type="button" aria-label="Next period">→</button></div></div><div id="planning-content"></div></section>
+        <section class="tasks-panel" aria-labelledby="tasks-heading">
           <div class="panel-heading">
             <div><div class="panel-title-row"><span class="section-kicker">YOUR LIST</span><span class="live-indicator"><span></span> Up to date</span></div><h2 id="tasks-heading">All tasks <span id="task-count" class="heading-count">0</span></h2></div>
             <button id="add-task-panel" class="button button-outline button-small" type="button"><span class="plus">+</span><span>Add task</span></button>

@@ -8,7 +8,7 @@ namespace TaskMate.Api.Data.Migrations;
 
 [DbContext(typeof(TaskMateDbContext))]
 [Migration("20261119173000_LinkTasksToCourses")]
-public sealed class LinkTasksToCourses : Migration
+public sealed partial class LinkTasksToCourses : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
     {

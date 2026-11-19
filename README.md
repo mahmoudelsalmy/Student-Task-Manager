@@ -3,7 +3,7 @@
 A web-based academic productivity application that helps university students organize subjects, assignments, projects, exams, and deadlines in one place.
 
 > **Course project:** CSE362c / CSE5531 — Fall 2026  
-> **Status:** Proposal and initial planning
+> **Status:** Working student task manager with authenticated, per-user storage
 
 ## Project goals
 
@@ -39,6 +39,19 @@ The application must be server-backed. Browser-side validation alone is not suff
 - Search and filters by title, subject, status, priority, and due date
 - Dashboard summary and upcoming deadlines
 - Responsive, keyboard-accessible interface
+
+## Implemented in the current development branch
+
+- Email and password registration and sign-in with authenticated task and course APIs.
+- Task creation, editing, deletion, search, status and priority filters, pagination, and dashboard summaries.
+- Exam, assignment, project, and personal task categories with due dates, status, and priority.
+- Course management, optional course links on tasks, and ownership checks for task and course access.
+- Calendar view for dated tasks, a status-based Kanban board, and a seven-day study planner that groups upcoming work and suggests study time by category.
+- SQLite persistence and versioned Entity Framework Core migrations.
+
+The calendar and planner are based on task due dates. Study time values are planning suggestions; they do not reserve or persist calendar time blocks.
+
+Run from the `app` directory with `./scripts/run.ps1` on Windows or `./scripts/run.sh` on macOS/Linux. See [app/README.md](app/README.md) for configuration and deployment details.
 
 ## Initial data model
 

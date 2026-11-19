@@ -12,6 +12,7 @@
     pageSize: 20,
     totalPages: 0,
     totalCount: 0, courses: [], searchTimer: null,
+    planningDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     loadId: 0,
     toastTimer: null,
   };
@@ -143,7 +144,7 @@
     $("#avatar").textContent = [...payload.user.name.trim()][0]?.toUpperCase() || "S";
     setWelcome();
     await refreshDashboard();
-    await loadTasks();
+    await Promise.all([loadTasks(), loadCourses()]);
   }
 
   function setWelcome() {
@@ -351,7 +352,7 @@
       });
       $("#task-dialog").close();
       state.page = 1;
-      await Promise.all([loadTasks(), refreshDashboard()]);
+      await Promise.all([refreshCurrentView(), refreshDashboard()]);
       showToast(id ? "Your task is updated." : "Your task is on the list.");
     } catch (error) {
       setMessage($("#task-form-message"), error.message);
@@ -389,7 +390,7 @@
     };
     try {
       await api(`/api/tasks/${task.id}`, { method: "PUT", body: JSON.stringify(payload) });
-      await Promise.all([loadTasks(), refreshDashboard()]);
+      await Promise.all([refreshCurrentView(), refreshDashboard()]);
       showToast(changes.status === "Completed" ? "One less thing on your mind. Nice work." : "Task status updated.");
     } catch (error) {
       showToast(error.message, true);
@@ -400,7 +401,7 @@
     if (!window.confirm(`Delete “${task.title}”? This can’t be undone.`)) return;
     try {
       await api(`/api/tasks/${task.id}`, { method: "DELETE" });
-      await Promise.all([loadTasks(), refreshDashboard()]);
+      await Promise.all([refreshCurrentView(), refreshDashboard()]);
       showToast("Task deleted.");
     } catch (error) {
       showToast(error.message, true);
@@ -413,8 +414,21 @@ function updateCourseOptions(){const select=$("#task-course");const selected=sel
 async function loadCourses(){try{state.courses=await api("/api/courses");updateCourseOptions();$("#course-count").textContent=state.courses.length;$("#nav-courses").textContent=state.courses.length;$("#course-list").replaceChildren(...state.courses.map(courseCard));$("#course-empty").classList.toggle("hidden",state.courses.length>0);}catch(e){showToast(e.message,true);}}
 function courseDialog(c=null){$("#course-form").reset();$("#course-id").value=c?.id||"";$("#course-dialog-title").textContent=c?"Edit course":"Add a course";$("#course-name").value=c?.name||"";$("#course-code").value=c?.code||"";$("#course-instructor").value=c?.instructor||"";$("#course-semester").value=c?.semester||"";$("#course-color").value=c?.color||"#64748b";setMessage($("#course-form-message"));$("#course-dialog").showModal();}
 async function saveCourse(e){e.preventDefault();const id=$("#course-id").value;const body={name:$("#course-name").value.trim(),code:$("#course-code").value.trim()||null,instructor:$("#course-instructor").value.trim()||null,semester:$("#course-semester").value.trim()||null,color:$("#course-color").value};try{await api(id?`/api/courses/${id}`:"/api/courses",{method:id?"PUT":"POST",body:JSON.stringify(body)});$("#course-dialog").close();await loadCourses();showToast("Course saved.");}catch(err){setMessage($("#course-form-message"),err.message);}}
-async function deleteCourse(c){if(!confirm(`Delete “${c.name}”?`))return;try{await api(`/api/courses/${c.id}`,{method:"DELETE"});await Promise.all([loadCourses(),loadTasks()]);showToast("Course deleted. Linked tasks are now uncategorized.");}catch(e){showToast(e.message,true);}}
-function showCourses(){state.view="courses";$(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.view==="courses"));$("#breadcrumb-current").textContent="My courses";$(".stats-grid").classList.add("hidden");$(".welcome-row").classList.add("hidden");$(".tasks-panel").classList.add("hidden");$("#courses-panel").classList.remove("hidden");loadCourses();closeSidebar();}
+async function deleteCourse(c){if(!confirm(`Delete “${c.name}”?`))return;try{await api(`/api/courses/${c.id}`,{method:"DELETE"});await Promise.all([loadCourses(),refreshCurrentView()]);showToast("Course deleted. Linked tasks are now uncategorized.");}catch(e){showToast(e.message,true);}}
+function showCourses(){state.view="courses";$(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.view==="courses"));$("#breadcrumb-current").textContent="My courses";$(".stats-grid").classList.add("hidden");$(".welcome-row").classList.add("hidden");$(".tasks-panel").classList.add("hidden");$("#planning-panel").classList.add("hidden");$("#courses-panel").classList.remove("hidden");loadCourses();closeSidebar();}
+async function getAllTasks(extra={}){const all=[];let page=1,totalPages=1;do{const params=new URLSearchParams({page:String(page),pageSize:"100",...extra});const result=await api(`/api/tasks?${params}`);all.push(...result.items);totalPages=result.totalPages;page++;}while(page<=totalPages&&page<=20);return all;}
+function taskCourseName(task){const course=state.courses.find(item=>item.id===task.courseId);return course?(course.code?`${course.name} · ${course.code}`:course.name):"No course";}
+function makePlanningTask(task,extraClass=""){const card=document.createElement("article");card.className=`planning-task ${extraClass}`.trim();const open=document.createElement("button");open.type="button";open.className="planning-task-title";open.textContent=task.title;open.addEventListener("click",()=>openTaskDialog(task));const detail=document.createElement("p");detail.textContent=`${taskCourseName(task)} · ${labels.category[task.category]||task.category}${task.dueDate?` · Due ${displayDate(task.dueDate)}`:""}`;card.append(open,detail);return card;}
+async function renderPlanningView(){const panel=$("#planning-content");panel.setAttribute("aria-busy","true");panel.textContent="Loading your plan…";const date=new Date(state.planningDate);const isCalendar=state.view==="calendar",isPlanner=state.view==="planner";let from,to;
+if(isCalendar){date.setDate(1);from=new Date(date.getFullYear(),date.getMonth(),1);to=new Date(date.getFullYear(),date.getMonth()+1,0);$("#planning-heading").textContent="Calendar";$("#planning-description").textContent="Your exams, assignments, and deadlines by day.";$("#planning-kicker").textContent="DEADLINES AT A GLANCE";$("#planning-period").textContent=new Intl.DateTimeFormat(undefined,{month:"long",year:"numeric"}).format(date);}
+else if(isPlanner){from=new Date();from.setHours(0,0,0,0);to=new Date(from);to.setDate(to.getDate()+6);$("#planning-heading").textContent="Study planner";$("#planning-description").textContent="A focused week, paced around your upcoming work.";$("#planning-kicker").textContent="MAKE SPACE TO STUDY";$("#planning-period").textContent=`${displayDate(localDateString(from))} – ${displayDate(localDateString(to))}`;}
+else{$("#planning-heading").textContent="Kanban board";$("#planning-description").textContent="Move work forward by changing its status.";$("#planning-kicker").textContent="YOUR WORK IN PROGRESS";$("#planning-period").textContent="";}
+try{const tasks=isCalendar?await getAllTasks({dueFrom:localDateString(from),dueThrough:localDateString(to)}):isPlanner?await getAllTasks({dueFrom:localDateString(from),dueThrough:localDateString(to),excludeCompleted:"true"}):await getAllTasks();panel.replaceChildren();
+if(isCalendar){const grid=document.createElement("div");grid.className="calendar-grid";["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].forEach(name=>{const label=document.createElement("div");label.className="calendar-weekday";label.textContent=name;grid.append(label);});const offset=(from.getDay()+6)%7;for(let i=0;i<offset;i++){const blank=document.createElement("div");blank.className="calendar-day outside-month";blank.setAttribute("aria-hidden","true");grid.append(blank);}for(let day=1;day<=to.getDate();day++){const cell=document.createElement("div"),stamp=localDateString(new Date(from.getFullYear(),from.getMonth(),day));cell.className="calendar-day";if(stamp===localDateString())cell.classList.add("today");const number=document.createElement("span");number.className="calendar-date";number.textContent=day;cell.append(number);tasks.filter(task=>task.dueDate===stamp).forEach(task=>{const item=document.createElement("button");item.type="button";item.className=`calendar-event event-${task.category.toLowerCase()}`;item.textContent=task.title;item.title=`${task.title} · ${taskCourseName(task)}`;item.addEventListener("click",()=>openTaskDialog(task));cell.append(item);});grid.append(cell);}panel.append(grid);if(!tasks.length){const note=document.createElement("p");note.className="planning-note";note.textContent="No deadlines this month. Add an exam or assignment to start filling your calendar.";panel.append(note);}}
+else if(isPlanner){const days=document.createElement("div");days.className="planner-days";for(let i=0;i<7;i++){const current=new Date(from);current.setDate(from.getDate()+i);const stamp=localDateString(current),group=document.createElement("section");group.className="planner-day";const heading=document.createElement("h3");heading.textContent=new Intl.DateTimeFormat(undefined,{weekday:"long",month:"short",day:"numeric"}).format(current);const dayTasks=tasks.filter(task=>task.dueDate===stamp);const totalMinutes=dayTasks.reduce((sum,task)=>sum+(task.category==="Exam"?60:task.category==="Assignment"?45:30),0);const summary=document.createElement("span");summary.textContent=dayTasks.length?`${dayTasks.length} item${dayTasks.length===1?"":"s"} · ${totalMinutes} min suggested`:"Open time";const title=document.createElement("div");title.className="planner-day-heading";title.append(heading,summary);group.append(title);dayTasks.forEach(task=>group.append(makePlanningTask(task)));if(!dayTasks.length){const free=document.createElement("p");free.className="planning-note";free.textContent="No deadlines scheduled. Use this space for review or a break.";group.append(free);}days.append(group);}panel.append(days);if(!tasks.length){const note=document.createElement("p");note.className="planning-note";note.textContent="Your next seven days are clear. Add an exam or assignment deadline and it will appear here.";panel.prepend(note);}}
+else{const board=document.createElement("div");board.className="kanban-board";for(const [status,title] of [["ToDo","To do"],["InProgress","In progress"],["Completed","Completed"]]){const column=document.createElement("section");column.className="kanban-column";const header=document.createElement("div"),h=document.createElement("h3"),count=document.createElement("span");header.className="kanban-column-heading";h.textContent=title;count.textContent=tasks.filter(task=>task.status===status).length;header.append(h,count);column.append(header);tasks.filter(task=>task.status===status).forEach(task=>{const card=makePlanningTask(task,`priority-${task.priority.toLowerCase()}`),select=document.createElement("select");select.setAttribute("aria-label",`Move ${task.title}`);[["ToDo","To do"],["InProgress","In progress"],["Completed","Completed"]].forEach(([value,label])=>select.add(new Option(label,value)));select.value=task.status;select.addEventListener("change",()=>updateTask(task,{status:select.value}));card.append(select);column.append(card);});board.append(column);}panel.append(board);if(!tasks.length)panel.textContent="Nothing here yet. Add a task and it will appear on your board.";}
+}catch(error){panel.textContent=`We couldn’t load this view. ${error.message}`;showToast(error.message,true);}finally{panel.setAttribute("aria-busy","false");}}
+function refreshCurrentView(){return ["calendar","kanban","planner"].includes(state.view)?renderPlanningView():loadTasks();}
   function setView(view) {
     state.view = view;
     state.page = 1;
@@ -422,6 +436,17 @@ function showCourses(){state.view="courses";$(".nav-link").forEach(b=>b.classLis
     // filter (for example InProgress) override the Completed view.
     $("#status-filter").value = "";
     $$(".nav-link").forEach(button => button.classList.toggle("active", button.dataset.view === view));
+    if (["calendar", "kanban", "planner"].includes(view)) {
+      const title = { calendar: "Calendar", kanban: "Kanban board", planner: "Study planner" }[view];
+      $("#breadcrumb-current").textContent = title;
+      $(".stats-grid").classList.add("hidden"); $(".welcome-row").classList.add("hidden");
+      $(".tasks-panel").classList.add("hidden"); $("#courses-panel").classList.add("hidden");
+      $("#planning-panel").classList.remove("hidden");
+      $("#planning-prev").classList.toggle("hidden", view !== "calendar");
+      $("#planning-next").classList.toggle("hidden", view !== "calendar");
+      renderPlanningView(); closeSidebar(); return;
+    }
+    $("#planning-panel").classList.add("hidden");
     const heading = view === "upcoming" ? "Upcoming" : view === "completed" ? "Completed" : "All tasks";
     $("#breadcrumb-current").textContent = heading;
     $("#tasks-heading").firstChild.textContent = `${heading} `;$(".stats-grid").classList.remove("hidden");$(".welcome-row").classList.remove("hidden");$(".tasks-panel").classList.remove("hidden");$("#courses-panel").classList.add("hidden");
@@ -477,6 +502,8 @@ function showCourses(){state.view="courses";$(".nav-link").forEach(b=>b.classLis
 
     $(".nav-link").forEach(button => button.addEventListener("click", () => button.dataset.view==="courses"?showCourses():setView(button.dataset.view)));
 $("#add-course").addEventListener("click",()=>courseDialog());$("#course-empty-add").addEventListener("click",()=>courseDialog());$("#course-form").addEventListener("submit",saveCourse);$("#course-cancel").addEventListener("click",()=>$("#course-dialog").close());
+    $("#planning-prev").addEventListener("click", () => { state.planningDate = new Date(state.planningDate.getFullYear(), state.planningDate.getMonth() - 1, 1); renderPlanningView(); });
+    $("#planning-next").addEventListener("click", () => { state.planningDate = new Date(state.planningDate.getFullYear(), state.planningDate.getMonth() + 1, 1); renderPlanningView(); });
     ["#status-filter", "#category-filter", "#priority-filter"].forEach(selector => {
       $(selector).addEventListener("change", () => {
         state.view = "all";

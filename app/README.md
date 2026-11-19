@@ -9,7 +9,8 @@ It uses an ASP.NET Core 10 Web API, EF Core 10, SQLite, JWT bearer authenticatio
 - Email and password registration and login. Passwords are salted PBKDF2-HMAC-SHA256 hashes.
 - JWT-protected, user-scoped task and course endpoints.
 - Course management with course name, code, instructor, semester, and display color.
-- Create, view, edit, complete, and delete tasks with due dates, priority, status, category, and notes.
+- Create, view, edit, complete, and delete tasks with due dates, priority, status, category, notes, and an optional course link.
+- Monthly deadline calendar, status-based Kanban board, and a seven-day study planner with suggested time based on upcoming exams and assignments.
 - Dashboard totals for all tasks, completed tasks, deadlines due within seven days, overdue tasks, and completion percentage.
 - Server-side title search, status/category/priority filters, upcoming date filters, and pagination.
 - Responsive dashboard with mobile navigation and `/` as a keyboard shortcut to search.
@@ -63,11 +64,11 @@ From the `app` directory:
 dotnet test TaskMate.slnx --configuration Release
 ```
 
-The xUnit suite currently covers password hashing and verification, malformed password hashes, task text normalization, timestamps, and per-user task ownership checks. GitHub Actions runs restore, build, and tests for changes under `app/`.
+The xUnit suite covers password hashing and verification, malformed password hashes, task text normalization, timestamps, authentication, task and course ownership, course validation, and optional task-course links including deletion behavior. GitHub Actions runs restore, build, and tests for changes under `app/`.
 
 ## Database migrations
 
-The app runs EF Core `Database.Migrate()` on startup. The initial migration is in `backend/TaskMate.Api/Data/Migrations/`. To manage migrations manually, install EF CLI and run from the repository root:
+The app runs EF Core `Database.Migrate()` on startup. Versioned migrations are in `backend/TaskMate.Api/Data/Migrations/`; `database/schema.sql` describes a fresh database at the latest migration. To manage migrations manually, install EF CLI and run from the repository root:
 
 ```powershell
 dotnet tool install --global dotnet-ef --version 10.0.13
