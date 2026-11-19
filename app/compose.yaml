@@ -8,7 +8,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__DefaultConnection: "Data Source=/app/data/taskmate.db;Cache=Shared;Foreign Keys=True"
       Authentication__Jwt__SigningKey: ${TASKMATE_JWT_SECRET:?Set TASKMATE_JWT_SECRET to a unique secret of at least 32 characters}
-      AllowedHosts: ${TASKMATE_ALLOWED_HOSTS:-*}
+      AllowedHosts: ${TASKMATE_ALLOWED_HOSTS:?Set TASKMATE_ALLOWED_HOSTS to your public host name}
     volumes:
       - taskmate-data:/app/data
 
