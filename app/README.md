@@ -7,7 +7,8 @@ It uses an ASP.NET Core 10 Web API, EF Core 10, SQLite, JWT bearer authenticatio
 ## Features
 
 - Email and password registration and login. Passwords are salted PBKDF2-HMAC-SHA256 hashes.
-- JWT-protected, user-scoped task endpoints.
+- JWT-protected, user-scoped task and course endpoints.
+- Course management with course name, code, instructor, semester, and display color.
 - Create, view, edit, complete, and delete tasks with due dates, priority, status, category, and notes.
 - Dashboard totals for all tasks, completed tasks, deadlines due within seven days, overdue tasks, and completion percentage.
 - Server-side title search, status/category/priority filters, upcoming date filters, and pagination.
@@ -54,6 +55,16 @@ dotnet run --no-launch-profile --project backend/TaskMate.Api/TaskMate.Api.cspro
 
 Set `ConnectionStrings__DefaultConnection` to change the SQLite location. Relative paths resolve from the API content directory. Keep the database on durable storage and back it up before upgrades. SQLite here is intended for local use or a single app instance. Use a server database and its EF provider for horizontally scaled deployments.
 
+## Run tests
+
+From the `app` directory:
+
+```powershell
+dotnet test TaskMate.slnx --configuration Release
+```
+
+The xUnit suite currently covers password hashing and verification, malformed password hashes, task text normalization, timestamps, and per-user task ownership checks. GitHub Actions runs restore, build, and tests for changes under `app/`.
+
 ## Database migrations
 
 The app runs EF Core `Database.Migrate()` on startup. The initial migration is in `backend/TaskMate.Api/Data/Migrations/`. To manage migrations manually, install EF CLI and run from the repository root:
@@ -82,6 +93,11 @@ All JSON properties use camel case. Task statuses are `ToDo`, `InProgress`, and 
 | `POST` | `/api/auth/login` | No | Sign in and return a bearer token |
 | `GET` | `/api/auth/me` | Yes | Return the signed-in profile |
 | `GET` | `/api/dashboard?today=2026-10-22` | Yes | Summary counts using the supplied local date |
+| `GET` | `/api/courses` | Yes | List the signed-in user's courses |
+| `POST` | `/api/courses` | Yes | Create a course |
+| `GET` | `/api/courses/{id}` | Yes | Read one owned course |
+| `PUT` | `/api/courses/{id}` | Yes | Update an owned course |
+| `DELETE` | `/api/courses/{id}` | Yes | Delete an owned course |
 | `GET` | `/api/tasks` | Yes | List tasks with filters and pagination |
 | `GET` | `/api/tasks/{id}` | Yes | Read one owned task |
 | `POST` | `/api/tasks` | Yes | Create a task |

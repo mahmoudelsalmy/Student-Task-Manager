@@ -7,6 +7,7 @@ public sealed class TaskMateDbContext(DbContextOptions<TaskMateDbContext> option
 {
     public DbSet<User> Users => Set<User>();
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
+    public DbSet<Course> Courses => Set<Course>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -21,6 +22,22 @@ public sealed class TaskMateDbContext(DbContextOptions<TaskMateDbContext> option
             entity.HasMany(user => user.Tasks)
                 .WithOne(task => task.User)
                 .HasForeignKey(task => task.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Course>(entity =>
+        {
+            entity.HasKey(course => course.Id);
+            entity.Property(course => course.Name).HasMaxLength(100).IsRequired();
+            entity.Property(course => course.Code).HasMaxLength(20);
+            entity.Property(course => course.Instructor).HasMaxLength(100);
+            entity.Property(course => course.Semester).HasMaxLength(40);
+            entity.Property(course => course.Color).HasMaxLength(7).IsRequired();
+            entity.HasIndex(course => new { course.UserId, course.Name });
+            entity.HasIndex(course => new { course.UserId, course.Code }).IsUnique();
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(course => course.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

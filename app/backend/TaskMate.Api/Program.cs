@@ -23,6 +23,14 @@ if (builder.Environment.IsProduction() && jwt.SigningKey.StartsWith("local-devel
 {
     throw new InvalidOperationException("Set Authentication__Jwt__SigningKey to a unique secret before starting in Production.");
 }
+if (string.IsNullOrWhiteSpace(jwt.Issuer) || string.IsNullOrWhiteSpace(jwt.Audience))
+{
+    throw new InvalidOperationException("Authentication:Jwt:Issuer and Authentication:Jwt:Audience must both be configured.");
+}
+if (builder.Environment.IsProduction() && builder.Configuration["AllowedHosts"] is "*" or null or "")
+{
+    throw new InvalidOperationException("Set AllowedHosts to the public host names before starting in Production.");
+}
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is missing.");
@@ -90,7 +98,7 @@ builder.Services.AddRateLimiter(options =>
         partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         factory: _ => new FixedWindowRateLimiterOptions
     {
-        PermitLimit = 10,
+        PermitLimit = builder.Environment.IsEnvironment("Testing") ? 1000 : 10,
         Window = TimeSpan.FromMinutes(1),
         QueueLimit = 0,
         AutoReplenishment = true
