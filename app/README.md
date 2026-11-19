@@ -13,6 +13,7 @@ It uses an ASP.NET Core 10 Web API, EF Core 10, SQLite, JWT bearer authenticatio
 - Monthly deadline calendar, status-based Kanban board, and a seven-day study planner with suggested time based on upcoming exams and assignments.
 - Authenticated study-session creation, recent-session history, and total/weekly/monthly time summaries, with a Pomodoro focus timer and weekly goals in the browser UI. Browser-level tests are not implemented yet.
 - Weekly study goals with optional course scope and progress calculated from completed sessions.
+- A saved seven-day study planner with editable study blocks linked to optional courses and tasks.
 - User-owned exam scheduling with course, local-time entry, duration, location and notes; assignments continue to use task categories.
 - Dashboard totals for all tasks, completed tasks, deadlines due within seven days, overdue tasks, and completion percentage.
 - Server-side title search, status/category/priority filters, upcoming date filters, and pagination.
@@ -67,7 +68,7 @@ From the `app` directory:
 dotnet test TaskMate.slnx --configuration Release
 ```
 
-The xUnit suite covers password hashing and verification, malformed password hashes, task text normalization, timestamps, authentication, task and course ownership, course validation, optional task-course links including deletion behavior, and study-session API behavior. Browser behavior does not yet have automated tests. GitHub Actions runs restore, build, and tests for changes under `app/`.
+The xUnit suite covers password hashing and verification, malformed password hashes, task text normalization, timestamps, authentication, task and course ownership, course validation, optional task-course links including deletion behavior, study-session API behavior, exams, study goals, and saved study-plan ownership and reference validation. Browser behavior does not yet have automated tests. GitHub Actions runs restore, build, and tests for changes under `app/`.
 
 ## Database migrations
 
@@ -104,6 +105,10 @@ All JSON properties use camel case. Task statuses are `ToDo`, `InProgress`, and 
 | `POST` | `/api/study/goals` | Yes | Create a weekly goal, optionally scoped to an owned course |
 | `PUT` | `/api/study/goals/{id}` | Yes | Update an owned weekly goal |
 | `DELETE` | `/api/study/goals/{id}` | Yes | Delete an owned weekly goal |
+| `GET` | `/api/study/plan?fromUtc=...&throughUtc=...` | Yes | List owned study blocks in a UTC range of up to eight days |
+| `POST` | `/api/study/plan` | Yes | Create a study block, optionally linked to an owned course and task |
+| `PUT` | `/api/study/plan/{id}` | Yes | Update an owned study block |
+| `DELETE` | `/api/study/plan/{id}` | Yes | Delete an owned study block |
 | `GET` | `/api/exams` | Yes | List the signed-in user's exams ordered by date |
 | `POST` | `/api/exams` | Yes | Schedule an exam and optionally link an owned course; timestamps use UTC |
 | `GET` | `/api/exams/{id}` | Yes | Read an owned exam |
@@ -125,6 +130,8 @@ All JSON properties use camel case. Task statuses are `ToDo`, `InProgress`, and 
 Task create and update bodies accept an optional nullable `courseId`. The API only accepts a course owned by the signed-in user; omitting or sending `null` leaves a task unassigned. Deleting a course unlinks its tasks and preserves them.
 
 A study-session request contains `startedAtUtc`, `endedAtUtc`, optional `courseId`, optional `taskId`, and optional `notes`. Sessions must be between 1 and 240 minutes, cannot be in the future, and referenced courses/tasks must belong to the signed-in user. Store and send timestamps as UTC instants.
+
+Study-plan blocks are scheduled intentions, not completed sessions. Creating or editing a block never increases study-time summaries; only a validated completed focus session does.
 
 ```json
 { "items": [], "page": 1, "pageSize": 20, "totalCount": 0, "totalPages": 0 }
@@ -209,4 +216,3 @@ TaskMate/
 ## License
 
 No license has been selected for this repository yet. Add one before redistributing the project.
-

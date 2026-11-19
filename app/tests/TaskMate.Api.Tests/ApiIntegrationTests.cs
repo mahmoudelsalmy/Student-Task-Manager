@@ -356,6 +356,71 @@ public sealed class ApiIntegrationTests : IClassFixture<TaskMateApiFactory>
     {
         Assert.Equal(HttpStatusCode.Unauthorized, (await _client.GetAsync("/api/study/sessions")).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await _client.GetAsync("/api/study/summary")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _client.GetAsync("/api/study/plan?fromUtc=2026-11-19T00:00:00Z&throughUtc=2026-11-20T00:00:00Z")).StatusCode);
+    }
+
+    [Fact]
+    public async Task StudyPlanBlocks_AreCrudOwnerScopedAndValidateReferences()
+    {
+        using var owner = _factory.CreateClient();
+        owner.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer", await RegisterAndGetToken(owner, $"plan-owner-{Guid.NewGuid():N}@example.com"));
+        var courseResponse = await owner.PostAsJsonAsync("/api/courses", new { name = "Calculus" });
+        using var courseJson = JsonDocument.Parse(await courseResponse.Content.ReadAsStringAsync());
+        var courseId = courseJson.RootElement.GetProperty("id").GetGuid();
+        var taskResponse = await owner.PostAsJsonAsync("/api/tasks", new { title = "Practice integrals", courseId });
+        using var taskJson = JsonDocument.Parse(await taskResponse.Content.ReadAsStringAsync());
+        var taskId = taskJson.RootElement.GetProperty("id").GetGuid();
+        var startsAt = DateTimeOffset.UtcNow.AddDays(1);
+
+        var createdResponse = await owner.PostAsJsonAsync("/api/study/plan", new
+        {
+            title = "Integration practice", startsAtUtc = startsAt, durationMinutes = 90, courseId, taskId
+        });
+        Assert.Equal(HttpStatusCode.Created, createdResponse.StatusCode);
+        using var createdJson = JsonDocument.Parse(await createdResponse.Content.ReadAsStringAsync());
+        var blockId = createdJson.RootElement.GetProperty("id").GetGuid();
+        Assert.Equal(taskId, createdJson.RootElement.GetProperty("taskId").GetGuid());
+
+        var from = new DateTimeOffset(startsAt.UtcDateTime.Date, TimeSpan.Zero);
+        var through = from.AddDays(2);
+        var listResponse = await owner.GetAsync($"/api/study/plan?fromUtc={Uri.EscapeDataString(from.ToString("O"))}&throughUtc={Uri.EscapeDataString(through.ToString("O"))}");
+        Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
+        using var listJson = JsonDocument.Parse(await listResponse.Content.ReadAsStringAsync());
+        Assert.Single(listJson.RootElement.EnumerateArray());
+
+        using var other = _factory.CreateClient();
+        other.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer", await RegisterAndGetToken(other, $"plan-other-{Guid.NewGuid():N}@example.com"));
+        var hidden = await other.GetAsync($"/api/study/plan?fromUtc={Uri.EscapeDataString(from.ToString("O"))}&throughUtc={Uri.EscapeDataString(through.ToString("O"))}");
+        using var hiddenJson = JsonDocument.Parse(await hidden.Content.ReadAsStringAsync());
+        Assert.Empty(hiddenJson.RootElement.EnumerateArray());
+        Assert.Equal(HttpStatusCode.NotFound, (await other.PutAsJsonAsync($"/api/study/plan/{blockId}", new
+        {
+            title = "Unauthorized edit", startsAtUtc = startsAt, durationMinutes = 60
+        })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await other.DeleteAsync($"/api/study/plan/{blockId}")).StatusCode);
+
+        var foreignCourse = await other.PostAsJsonAsync("/api/study/plan", new
+        {
+            title = "Invalid course", startsAtUtc = startsAt, durationMinutes = 45, courseId
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, foreignCourse.StatusCode);
+        var otherCourseResponse = await owner.PostAsJsonAsync("/api/courses", new { name = "Statistics" });
+        using var otherCourseJson = JsonDocument.Parse(await otherCourseResponse.Content.ReadAsStringAsync());
+        var otherCourseId = otherCourseJson.RootElement.GetProperty("id").GetGuid();
+        var mismatchedCourse = await owner.PostAsJsonAsync("/api/study/plan", new
+        {
+            title = "Mismatched task", startsAtUtc = startsAt, durationMinutes = 45, taskId, courseId = otherCourseId
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, mismatchedCourse.StatusCode);
+
+        var updated = await owner.PutAsJsonAsync($"/api/study/plan/{blockId}", new
+        {
+            title = "Practice substitution", startsAtUtc = startsAt.AddHours(1), durationMinutes = 60, courseId, taskId
+        });
+        Assert.Equal(HttpStatusCode.OK, updated.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/api/study/plan/{blockId}")).StatusCode);
     }
 
     [Fact]
@@ -499,4 +564,3 @@ public sealed class TaskMateApiFactory : WebApplicationFactory<Program>
         }
     }
 }
-

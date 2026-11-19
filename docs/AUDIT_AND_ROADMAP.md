@@ -88,3 +88,9 @@ After the audited a8f61a8 baseline:
 
 The items above are follow-up implementation evidence and do not change the historical feature matrix or audited-head findings above.
 
+## Current follow-up (2026-11-19)
+
+- GitHub `main` includes PR #5's frontend foundation: corrected navigation event binding, shared accessible view routing, light/dark theme tokens, responsive mobile navigation, self-hosted Inter, keyboard improvements, and confirmation dialogs. Its hosted CI run #63 passed restore, build, and tests.
+- The development checkout fixes the same navigation binding and adds persistent study-planner blocks: UTC scheduling, optional owned task/course links, owner-scoped CRUD, an additive migration, week navigation, and editable blocks in the weekly planner.
+- Planned blocks remain separate from completed study sessions so scheduling work does not count as completed study time.
+- Remaining roadmap work includes notifications/reminders, task subtasks/recurrence/attachments, dashboard analytics/charts, profile/settings, browser-level regression coverage, and a populated-database migration rehearsal. These are not implemented yet.
